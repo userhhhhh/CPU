@@ -1,6 +1,10 @@
-riscv/testspace/*
+testspace/*
+!.keep
 
 *.o
 *.vcd
 
-!.keep
+
+*.elf
+*.dump
+*.data

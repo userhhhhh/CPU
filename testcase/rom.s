@@ -1,6 +1,8 @@
-	.section .rom,"ax"
-	.globl main
+	.extern main
 
+	.section .text._start
+	.global _start
+_start:
 	li sp, 0x00020000
 	jal main
 	li a0, 0xff
