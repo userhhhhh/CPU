@@ -1,134 +1,108 @@
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <vector>
-#include <thread>
+#include "lib/irange.h"
+#include "lib/package.h"
+#include "lib/uart.h"
+#include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstddef>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <vector>
 
-// UART port configuration, adjust according to implementation
-int baud_rate = 115200;
-serial::bytesize_t byte_size = serial::eightbits;
-serial::parity_t parity = serial::parity_odd;
-serial::stopbits_t stopbits = serial::stopbits_one;
-int inter_byte_timeout = 50;
-int read_timeout_constant = 50;
-int read_timeout_multiplier = 10;
-int write_timeout_constant = 50;
-int write_timeout_multiplier = 10;
-
-//methods
-int on_init() {
+// methods
+inline auto on_init() -> void {
     using namespace std::chrono_literals;
-    byte junk[10];
-    uart_read(junk,8);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    byte init[10];
-    byte recv[10]={0};
-    init[0] = 0x00;
-    int len = 4;
-    *reinterpret_cast<word*>(init+1) = len;
-    char test[10] = "UART";
-    for (int i=0;i<len;++i) {
-        init[3+i]=(byte)test[i];
-        info("%02x ",init[3+i]);
-    }
-    info("\n");
-    uart_send(init,3+len,recv,len);
-    for (int i=0;i<len;++i) {
-        info("%02x ",recv[i]);
-    }
-    info("\n");
-    char *str = reinterpret_cast<char*>(recv);
-    if (strcmp(str,test)) {
-        error("UART assertion failed\n");
-        return 1;
-    }
-    return 0;
+    uart::recv_pkg<8>(); // Read 8 bytes of rubbish.
+    std::this_thread::sleep_for(1s);
+
+    constexpr char test[] = "UART";
+    normal::package<5> test_pkg{0x00};
+    uart::send_pkg(test_pkg.set_string(test));
+
+    const auto recv = uart::recv_pkg<4>();
+    debug::assert(std::memcmp(test, recv.data(), 4) == 0, "UART assertion failed\n");
 }
 
-void upload_ram(byte* ram_data, int ram_size) {
-    if (!ram_size) return;
-    const int short blk_size = 0x400;
-    const int pld_size = 1+3+2+blk_size;
-    byte payload[pld_size];
-    int blk_cnt = (ram_size / blk_size);
-    if (blk_cnt*blk_size<ram_size) ++blk_cnt;
-    info("uploading RAM: %x blks:%d\n", ram_size, blk_cnt);
-    for (int i=0; i<blk_cnt; ++i) {
-        unsigned int offset = i * blk_size;
-        unsigned int addr = offset;
-        info("blk:%i ofs:%04x\n",i,offset);
-        payload[0] = 0x0A;
-        *reinterpret_cast<dword*>(payload+1) = addr;
-        *reinterpret_cast<word*>(payload+4) = blk_size;
-        for (int j=0;j<blk_size;++j) {
-            payload[6+j] = (byte)ram_data[offset+j];
-        }
-        uart_send(payload,pld_size);
+inline auto upload_ram(const byte *ram_data, int ram_size) -> void {
+    if (!ram_size)
+        return;
+
+    using namespace std::chrono_literals;
+
+    const std::size_t blk_size = 0x400;
+    memory::package<blk_size> payload{0x0A};
+
+    const auto blk_cnt = (ram_size + blk_size - 1) / blk_size;
+    debug::info("uploading RAM: %zx blks:%zu\n", ram_size, blk_cnt);
+
+    for (const auto i : irange(blk_cnt)) {
+        const auto offset   = i * blk_size;
+        const auto rem_size = std::min(ram_size - offset, blk_size);
+        debug::info("blk: %zu offset: %04zx\n size: %zu\n", i, offset, rem_size);
+        uart::send_pkg(payload.set_data(ram_data + offset, rem_size).set_offset(offset));
     }
-    info("RAM uploaded\n");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    debug::info("RAM uploaded\n");
+    std::this_thread::sleep_for(1s);
 }
 
-void upload_input(byte* in_data, int in_size) {
-    if (!in_size) return;
-    const int short blk_size = 0x40;
-    byte payload[3+blk_size]={0};
-    int blk_cnt = (in_size / blk_size);
-    if (blk_cnt*blk_size<in_size) ++blk_cnt;
-    info("uploading INPUT: %x blks:%d\n", in_size, blk_cnt);
-    int pre_size = 2;
-    payload[0] = 0x05;
-    payload[3] = 0x20;
-    payload[4] = 0x20;
-    *reinterpret_cast<word*>(payload+1) = pre_size;
-    uart_send(payload,1+2+pre_size);
-    int rem_size = in_size;
-    for (int i=0; i<blk_cnt; ++i) {
-        unsigned int offset = i * blk_size;
-        info("blk:%i ofs:%04x\n",i,offset);
-        payload[0] = 0x05;
-        int dat_size = (rem_size<blk_size) ? rem_size : blk_size;
-        *reinterpret_cast<word*>(payload+1) = dat_size;
-        for (int j=0;j<dat_size;++j) {
-            payload[3+j] = (byte)in_data[offset+j];
-        }
-        uart_send(payload,1+2+dat_size);
-        rem_size -= dat_size;
+inline auto upload_input(const byte *in_data, std::size_t in_size) -> void {
+    if (!in_size)
+        return;
+
+    using namespace std::chrono_literals;
+
+    const std::size_t blk_size = 0x400;
+    normal::package<blk_size> payload{0x05};
+    uart::send_pkg(payload.set_string("  ")); // 2 spaces
+
+    const auto blk_cnt = (in_size + blk_size - 1) / blk_size;
+    debug::info("uploading INPUT: %zx blks: %zu\n", in_size, blk_cnt);
+
+    for (const auto i : irange(blk_cnt)) {
+        const auto offset   = i * blk_size;
+        const auto rem_size = std::min(in_size - offset, blk_size);
+        debug::info("blk: %zu offset: %04zx\n size: %zu\n", i, offset, rem_size);
+        uart::send_pkg(payload.set_data(in_data + offset, rem_size));
     }
-    info("INPUT uploaded\n");
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    debug::info("INPUT uploaded\n");
+    std::this_thread::sleep_for(1s);
 }
 
-void verify_ram(byte* ram_data, int ram_size) {
-    const int short blk_size = 0x400;
-    const int pld_size = 1+3+2;
-    byte payload[pld_size];
-    byte recv_data[blk_size];
-    int blk_cnt = ram_size/blk_size;
-    if (blk_cnt*blk_size<ram_size) ++blk_cnt;
-    info("verifying RAM: %x blks:%d\n", ram_size, blk_cnt);
-    for (int i=0; i<blk_cnt; ++i) {
-        unsigned int offset = i * blk_size;
-        unsigned int addr = offset;
-        info("blk:%i ofs:%04x\n",i,offset);
-        payload[0] = 0x09;
-        *reinterpret_cast<dword*>(payload+1) = addr;
-        *reinterpret_cast<word*>(payload+4) = blk_size;
-        uart_send(payload,6,recv_data,blk_size);
-        for (int j=0; j<blk_size; ++j) {
-            if (ram_data[offset+j]!=recv_data[j]) {
-                error("RAM error: addr:%08x data:%02x/%02x\n", offset+j, ram_data[offset+j], recv_data[j]);
-            }
+inline auto verify_ram(const byte *ram_data, std::size_t ram_size) -> void {
+    const std::size_t blk_size = 0x400;
+
+    memory::package<1> payload{0x09};
+    const auto blk_cnt = (ram_size + blk_size - 1) / blk_size;
+
+    debug::info("verifying RAM: %x blks:%d\n", ram_size, blk_cnt);
+    for (const auto i : irange(blk_cnt)) {
+        const auto offset   = i * blk_size;
+        const auto rem_size = std::min(ram_size - offset, blk_size);
+        debug::info("blk: %zu offset: %04zx\n size: %zu\n", i, offset, rem_size);
+
+        // Send the offset and length, then receive the data.
+        uart::send_pkg(payload.unsafe_set_length(rem_size).set_offset(offset), sizeof(payload));
+        const auto recv = uart::recv_pkg<blk_size>(rem_size);
+
+        // Compare the received data with the RAM data.
+        if (const auto result = std::memcmp(ram_data + offset, recv.data(), rem_size)) {
+            debug::error("RAM error: addr:%08x\n", offset + result);
+            debug::assert(false, "RAM verification failed\n");
         }
     }
-    info("RAM verification complete\n");
+
+    debug::info("RAM verification complete\n");
     std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
-int on_recv(byte data) {
-    // info("recv: %02x %c\n",data,data);
-    info("%c",data);
+inline auto on_recv(byte data) -> int {
+    debug::info("%c", data);
     fflush(stdout);
     return data == 0;
 }
