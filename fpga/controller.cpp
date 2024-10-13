@@ -3,6 +3,7 @@
 #include "lib/uart.h"
 #include "lib/utility.h"
 #include "listener.h"
+#include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -63,10 +64,7 @@ static auto load_input(const std::string &in_path) -> std::vector<char> {
     return in_data;
 }
 
-clock_t start_tm;
-clock_t end_tm;
-
-void run() {
+static auto run() -> void {
     // demo
 
     // debug packet format: see hci.v or README.md
@@ -102,7 +100,7 @@ void run() {
             uart::send_byte(run ? 0x03 : 0x04);
             run = !run;
 
-            start_tm = clock();
+            const auto tic = std::chrono::high_resolution_clock::now();
             // receive output bytes from fpga
             while (1) {
                 // to debug cpu at the same time, implement separate thread
@@ -111,11 +109,10 @@ void run() {
                 if (on_recv(uart::recv_byte()))
                     break;
             }
-            end_tm = clock();
-            debug::info(
-                "\nCPU returned with running time: %f\n",
-                (double)(end_tm - start_tm) / CLOCKS_PER_SEC
-            );
+            const auto toc = std::chrono::high_resolution_clock::now();
+            const auto elapsed_time =
+                std::chrono::duration_cast<std::chrono::duration<double>>(toc - tic).count();
+            debug::info("\nCPU returned with running time: %f\n", elapsed_time);
 
             // manually pressing reset button is recommended
 
@@ -129,24 +126,22 @@ void run() {
     }
 }
 
-void run_auto() {
+static auto run_auto() -> void {
     uart::send_byte(0x04);
-    start_tm = clock();
     while (1) {
         while (!uart::available())
             ;
-        const auto data = uart::recv_byte();
-        if (data == 0x00)
+        if (const auto data = uart::recv_byte())
+            putchar(data);
+        else // data == 0x00
             break;
-        putchar(data);
     }
-    end_tm = clock();
 }
-
 
 using std::string;
 
-void work(string ram_path, std::optional<string> input_path, string com_port, char mode) {
+static auto work(string ram_path, std::optional<string> input_path, string com_port, char mode)
+    -> void {
     if (mode == 'I') {
         debug::info_enabled = true;
     } else if (mode == 'T') {
