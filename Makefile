@@ -33,6 +33,5 @@ run_sim: build_sim build_sim_test
 
 clean:
 	rm -f $(TESTSPACE_DIR)/test*
-	@make -C $(TESTCASE_DIR) clean
 
 .PHONY: all build_sim build_sim_test run_sim clean

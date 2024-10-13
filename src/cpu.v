@@ -1,4 +1,4 @@
-// RISCV32I CPU top module
+// RISCV32 CPU top module
 // port modification allowed for debugging purposes
 
 module cpu(
