@@ -162,7 +162,7 @@ RISC-V Toolchain 的主要用途是生成测试点。
 在测试中，Simulation 需要 verilog 格式的机器码，而 fpga 测试需要 binary 格式的机器码，这些都需要**编译C代码**来获得。
 
 对于我们要求的测试点，助教会提供编译好的文件。如果有自定义测试的需求，可以参考下面的方法。
-也可以使用在线编译平台 <TODO://link_here>。
+也可以使用在线编译平台 <https://wankupi.top/riscvc/>。
 
 推荐的配置方式：
 
