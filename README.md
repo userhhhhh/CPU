@@ -119,7 +119,7 @@ Verilog 代码会以软件仿真和 FPGA 板两种方式运行。你设计的电
 
 5. **我该如何开始运行代码？**
 
-   运行 `make test_sim name=000` 指令即可自动编译并运行第一个仿真测试点，测试文件均在 `testspace` 文件夹中。
+   运行 `make run_sim name=000` 指令即可自动编译并运行第一个仿真测试点，测试文件均在 `testspace` 文件夹中。
 
 6. **`io_buffer_full`?**
 
@@ -131,7 +131,9 @@ Verilog 代码会以软件仿真和 FPGA 板两种方式运行。你设计的电
 
    用于指示当前hci总线是否为active (可工作)，若否，则cpu应当pause。
 
-8. **To be continued...**
+8. 当你发现一个测试点在非新烧录的情况下运行会出错，请向助教报告。
+
+9. **To be continued...**
 
 ----
 
@@ -154,6 +156,7 @@ serial 库是 [fpga/controller.cpp](fpga/controller.cpp) 的依赖库，用于�
 仓库为 <https://github.com/wjwwood/serial>
 
 在 Arch Linux 上，可以直接安装 AUR 上的 serial 库。
+如果运行 fpga/build.sh 时遇到 ld 符号不存在问题，可以在 serial 库的 PKGBUILD 中添加 `options=('!lto')` 或 `options=('!strip')`，然后重新构建安装。
 
 ### C/C++ Cross Compiler for RISC-V
 
@@ -187,3 +190,9 @@ docker run -it --rm -v .:/app -w /app imageName make
 - 请注意下载需要 6.6G 空间，安装内容大小为 1G 左右。
 
 如果使用此配置方式，请自行修改 [Makefile](testcase/Makefile) 中 `RISCV_TOOLCHAIN` 等配置。
+
+## 一些建议
+
+1. 尽早开始
+
+2. 创建仓库时，不要直接 fork 本仓库。因为本仓库中包含测试点等不必要的内容，会导致仓库体积略大。可以考虑复制本仓库的内容到你自己的仓库，然后将除 sim、src 外的文件夹加入 .gitignore。并请撰写自己的 README.md，来介绍你的具体实现。
