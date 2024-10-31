@@ -97,6 +97,27 @@ Verilog 代码会以软件仿真和 FPGA 板两种方式运行。你设计的电
 
 - 非官方 Green Card，[PDF 下载链接](https://inst.eecs.berkeley.edu/~cs61c/fa17/img/riscvcard.pdf)
 
+### 如何测试
+
+测试分为模拟测试和上板测试两种。
+
+对于模拟测试，你可以在仓库根目录执行
+
+```shell
+make run_sim name=your_testcase_name
+```
+
+来自动编译 Verilog 和运行测试点。`your_testcase_name` 是你想运行的测试点的完整名称或者其子段（只要没有多个文件匹配）。
+命令将从 `testcase/sim` 目录下寻找测试点，并复制到 `testspace` 目录。
+
+如果只想编译，可以使用
+
+```shell
+make build_sim
+```
+
+TODO: 上板测试文档。
+
 ### Q & A
 
 1. **我的 CPU 应该从哪里读取指令并执行？**
