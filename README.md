@@ -101,7 +101,7 @@ Verilog 代码会以软件仿真和 FPGA 板两种方式运行。你设计的电
 
 测试分为模拟测试和上板测试两种。
 
-对于模拟测试，你可以在仓库根目录执行
+对于模拟测试，我们在 Makefile 中写好了使用 iverilog 来运行的相关命令。你可以在仓库根目录执行
 
 ```shell
 make run_sim name=your_testcase_name
@@ -115,6 +115,12 @@ make run_sim name=your_testcase_name
 ```shell
 make build_sim
 ```
+
+除了使用 iverilog 外，你也可以使用 Verilator 来进行模拟。你可以自行探索 Verilator 的使用。
+欢迎总结文档，向仓库提交 Pull Request。
+
+在模拟时可能会发现由于出错，运行不停止，这时可以修改 `sim/testbench.v` 中 `$finish` 前的时延来debug。
+注意，在oj提交前，请确保 `$dumpfile("test.vcd");` 已被注释或删除。
 
 TODO: 上板测试文档。
 
