@@ -38,7 +38,7 @@ module ALU(
                     3'b010: result <= ($signed(v1) < $signed(v2)) ? 1 : 0; // slt
                     3'b011: result <= ($unsigned(v1) < $unsigned(v2)) ? 1 : 0; // sltu
                     3'b100: result <= v1 ^ v2; // xor
-                    3'b101: result <= (op[0]) ? (v1 >>> v2[4:0]) : (v1 >> v2[4:0]); // srl or sra
+                    3'b101: result <= (op[3]) ? ($signed(v1) >>> v2[4:0]) : (v1 >> v2[4:0]); // srl or sra
                     3'b110: result <= v1 | v2; // or
                     3'b111: result <= v1 & v2; // and
                 endcase
