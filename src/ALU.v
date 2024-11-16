@@ -1,3 +1,5 @@
+`include "config.v"
+
 module ALU(
     input wire clk,
     input wire rst,
