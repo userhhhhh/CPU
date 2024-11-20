@@ -12,8 +12,6 @@ module RoB (
     input wire [31 : 0] instr_addr,
     input wire [4 : 0] rd,
     input wire [4 : 0] rs1,
-
-
     input wire [31 : 0] imm,
 
     // from RS
@@ -21,17 +19,25 @@ module RoB (
     input wire [`ROB_SIZE_WIDTH - 1 : 0] rs_rob_id,
     input wire [31 : 0] rs_value,
 
-    // from ALU
-    input wire alu_ready,
-    input wire [`ROB_SIZE_WIDTH - 1 : 0] alu_rob_id,
-    input wire [31 : 0] alu_value,
-
     // from LSB
     input wire lsb_ready,
     input wire [`ROB_SIZE_WIDTH - 1 : 0] lsb_rob_id,
     input wire [31 : 0] lsb_value,
 
-    // to RS
+    // to Reg: issue and commit
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] commit_rob_id,
+    output wire [4 : 0] commit_rd,
+    output wire [31 : 0] commit_value,
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] issue_rob_id,
+    output wire [4 : 0] issue_rd,
+
+    // get reg value: instant connection
+    input wire [`ROB_SIZE_WIDTH - 1 : 0] get_rob_id1,
+    input wire [`ROB_SIZE_WIDTH - 1 : 0] get_rob_id2,
+    output wire [31 : 0] get_value1,
+    output wire [31 : 0] get_value2,
+    output wire get_ready1,
+    output wire get_ready2,
 
     // issue
     output wire [4:0] issue_rd, // instr result的rd
@@ -46,54 +52,33 @@ module RoB (
 
 );
 
-    localparam UNKNOWN = 3'b000;
-    localparam ISSUE = 3'b001;
-    localparam WRITE = 3'b010;
-    localparam COMMIT = 3'b011;
-    localparam TODELETECDB = 3'b100;
-
     // 循环队列
     reg [`ROB_SIZE_WIDTH - 1 : 0] head, tail;
 
     // 记录每个指令的状态
-    reg busy [0 : `ROB_SIZE - 1];
-    reg ready [0 : `ROB_SIZE - 1];
+    reg busy [0 : `ROB_SIZE - 1]; // 是否已经有指令了
+    reg ready [0 : `ROB_SIZE - 1]; // 是否已经等到值了
 
-    reg [2:0] state [0 : `ROB_SIZE - 1];
-    reg [4:0] rds [0 : `ROB_SIZE - 1];
-    reg [31:0] values [0 : `ROB_SIZE - 1];
+    reg [4:0] rds [0 : `ROB_SIZE - 1]; // 存放指令原来的rd
+    reg [31:0] values [0 : `ROB_SIZE - 1]; // 存放已经算好的值
     reg [31:0] insts [0 : `ROB_SIZE - 1];
     reg [6:0] insts_type [0 : `ROB_SIZE - 1];
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
 
+    // issue: 接受从Decoder传来的指令
     always @(posedge clk) begin
-        if (rst) begin
+        if(rst) begin
             // TODO
         end 
-        else if (rdy) begin
-            if(rs_ready) begin
-                ready[rs_rob_id] <= 1;
-                values[rs_rob_id] <= rs_value;
-            end
-            if(alu_ready) begin
-                ready[alu_rob_id] <= 1;
-                values[alu_rob_id] <= alu_value;
-            end
-            if(lsb_ready) begin
-                ready[lsb_rob_id] <= 1;
-                values[lsb_rob_id] <= lsb_value;
-            end
+        if(rst || (clear && rdy)) begin
+            // TODO
+        end
+        else if(rdy) begin
             if(instr_valid) begin
                 tail <= tail + 1;
+
                 busy[tail] <= 1;
                 ready[tail] <= instr_ready;
-
-                if(instr_type == `LUI || instr_type == `JAL) begin
-                    state[tail] <= WRITE;
-                end else begin
-                    state[tail] <= ISSUE;
-                end
-                
                 rds[tail] <= rd;
 
                 insts[tail] <= instr;
@@ -105,36 +90,165 @@ module RoB (
                         values[tail] <= imm;
                     end
                     `AUIPC: begin
-                        state[tail] <= ISSUE;
+                        values[tail] <= instr_addr + imm;
                     end
                     `JAL: begin
-                        state[tail] <= ISSUE;
+                        values[tail] <= instr_addr + 4;
                     end
                     `JALR: begin
-                        state[tail] <= ISSUE;
+                        values[tail] <= instr_addr + 4;
                     end
                     `B_TYPE: begin
+                        // TODO
                         pc_frozen <= 1;
-                        next_pc <= instr_addr + 4;
+                        next_pc <= instr_addr + imm;
                     end
                     `LD_TYPE: begin
-                        state[tail] <= ISSUE;
+                        // do nothing
                     end
                     `S_TYPE: begin
-                        state[tail] <= ISSUE;
+                        // do nothing
                     end
                     `I_TYPE: begin
-                        state[tail] <= ISSUE;
+                        // do nothing
                     end
                     `R_TYPE: begin
-                        state[tail] <= ISSUE;
+                        // do nothing
                     end
                     default: begin
-                        state[tail] <= TODELETECDB;
+                        // do nothing
                     end
                 endcase
             end
         end
+    end
+
+    // receive: 听RS、LSB的广播
+    always @(posedge clk) begin
+        if (rst) begin
+            // TODO
+        end 
+        if (rst || (clear && rdy)) begin
+            // TODO
+        end
+        else if (rdy) begin
+            if(rs_ready) begin
+                ready[rs_rob_id] <= 1;
+                values[rs_rob_id] <= rs_value;
+            end
+            if(lsb_ready) begin
+                ready[lsb_rob_id] <= 1;
+                values[lsb_rob_id] <= lsb_value;
+            end
+        end
+    end
+
+    // commit: 向RS、LSB广播
+    always @(posedge clk) begin
+        if (rst) begin
+            // TODO
+        end 
+        if (rst || (clear && rdy)) begin
+            // TODO
+        end
+        else if (rdy) begin
+            if(busy[head] && ready[head]) begin
+                head <= head + 1;
+                busy[head] <= 0;
+                ready[head] <= 0;
+                case (insts_type[head])
+                    `LUI: begin
+                        
+                    end
+                    `AUIPC: begin
+                        
+                    end
+                    `JAL: begin
+                        
+                    end
+                    `JALR: begin
+                        
+                    end
+                    `B_TYPE: begin
+
+                    end
+                    `LD_TYPE: begin
+
+                    end
+                    `S_TYPE: begin
+
+                    end
+                    `I_TYPE: begin
+
+                    end
+                    `R_TYPE: begin
+
+                    end
+                    default: begin
+
+                    end
+                endcase
+            end
+        end
+    end
+
+    // to reg: issue and commit
+    // 这里一定要实时更新，不然会出现数据丢失
+    wire head_change_reg = !(insts_type[head] == `B_TYPE || insts_type[head] == `S_TYPE); // 表示RoB是否对reg进行了修改
+    if(rdy && busy[head] && ready[head] && head_change_reg) begin
+        assign commit_rob_id = head;
+        assign commit_rd = rds[head];
+        assign commit_value = values[head];
+    end 
+    else begin
+        assign commit_rob_id = 0;
+        assign commit_rd = 0;
+        assign commit_value = 0;
+    end 
+
+    wire tail_change_reg = !(instr_type == `B_TYPE || instr_type == `S_TYPE); // 表示RoB是否对reg进行了修改
+    // TODO: instr_valid
+    if(rdy && tail_change_reg)begin
+        assign issue_rob_id = tail,
+        assign issue_rd = rd;
+    end
+    else begin
+        assign issue_rob_id = 0;
+        assign issue_rd = 0;
+    end
+
+    // get reg value: instant connection
+    wire rs_value_ready1 = rs_ready && rs_rob_id == get_rob_id1;
+    wire lsb_value_ready1 = lsb_ready && lsb_rob_id == get_rob_id1;
+    wire rs_value_ready2 = rs_ready && rs_rob_id == get_rob_id2;
+    wire lsb_value_ready2 = lsb_ready && lsb_rob_id == get_rob_id2;
+    wire decoder_value_ready1 = instr_ready && tail == get_rob_id1;
+    wire decoder_value_ready2 = instr_ready && tail == get_rob_id2;
+    assign get_ready1 = rs_value_ready1 || lsb_value_ready1 || decoder_value_ready1;
+    assign get_ready2 = rs_value_ready2 || lsb_value_ready2 || decoder_value_ready2;
+    if(rs_value_ready1) begin
+        assign get_value1 = rs_value;
+    end
+    else if(lsb_value_ready1) begin
+        assign get_value1 = lsb_value;
+    end
+    else if(decoder_value_ready1) begin
+        assign get_value1 = values[tail];
+    end
+    else begin
+        assign get_value1 = 0;
+    end
+    if(rs_value_ready2) begin
+        assign get_value2 = rs_value;
+    end
+    else if(lsb_value_ready2) begin
+        assign get_value2 = lsb_value;
+    end
+    else if(decoder_value_ready2) begin
+        assign get_value2 = values[tail];
+    end
+    else begin
+        assign get_value2 = 0;
     end
 
 endmodule
