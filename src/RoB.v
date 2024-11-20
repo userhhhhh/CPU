@@ -52,6 +52,8 @@ module RoB (
 
 );
 
+    // TODO: predictor
+
     // 循环队列
     reg [`ROB_SIZE_WIDTH - 1 : 0] head, tail;
 
