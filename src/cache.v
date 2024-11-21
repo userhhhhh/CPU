@@ -1,10 +1,9 @@
 `include "config.v"
-module Fetcher(
+module cache(
     input wire clk,
     input wire rst,
     input wire rdy,
 
     
 );
-
 endmodule

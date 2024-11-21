@@ -48,6 +48,7 @@ module RS (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `RS_SIZE - 1];
 
+    // 通过 RS_chooser 选择两个line
     wire [`RS_SIZE_WIDTH - 1 : 0] free_rs_line;
     wire has_exe_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
