@@ -1,16 +1,17 @@
-`include "config.v"
+// `include "config.v"
+`include "/home/hqs123/class_code/CPU/src/config.v"
 
 module ALU(
     input wire clk,
     input wire rst,
     input wire rdy,
 
-    input wire [ROB_SIZE_WIDTH - 1 : 0] rob_id_in,
+    input wire [`ROB_SIZE_WIDTH - 1 : 0] rob_id_in,
     input wire [4:0] op,
-    input wire [31:0] v1;
-    input wire [31:0] v2;
+    input wire [31:0] v1,
+    input wire [31:0] v2,
 
-    output reg [ROB_SIZE_WIDTH - 1 : 0] rob_id_out,
+    output reg [`ROB_SIZE_WIDTH - 1 : 0] rob_id_out,
     output reg [31:0] result,
     output reg ready
 );

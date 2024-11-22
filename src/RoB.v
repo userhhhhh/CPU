@@ -1,4 +1,5 @@
-`include "config.v"
+// `include "config.v"
+`include "/home/hqs123/class_code/CPU/src/config.v"
 module RoB (
     input wire clk,
     input wire rst,

@@ -1,6 +1,10 @@
-`include "config.v"
-`include "RS_chooser.v"
-`include "ALU.v"
+// `include "config.v"
+// `include "RS_chooser.v"
+// `include "ALU.v"
+`include "/home/hqs123/class_code/CPU/src/config.v"
+`include "/home/hqs123/class_code/CPU/src/RS_chooser.v"
+`include "/home/hqs123/class_code/CPU/src/ALU.v"
+
 module RS (
     input wire clk,
     input wire rst,
