@@ -210,8 +210,8 @@ module RoB (
 
     wire tail_change_reg = !(instr_type == `B_TYPE || instr_type == `S_TYPE); // 表示RoB是否对reg进行了修改
     // TODO: instr_valid
-    if(rdy && tail_change_reg)begin
-        assign issue_rob_id = tail,
+    if(rdy && tail_change_reg) begin
+        assign issue_rob_id = tail;
         assign issue_rd = rd;
     end
     else begin

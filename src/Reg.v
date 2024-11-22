@@ -1,0 +1,65 @@
+`include "config.v"
+module Reg (
+    input wire clk,
+    input wire rst,
+    input wire rdy,
+
+    // from RoB
+    input wire [`ROB_SIZE_WIDTH - 1 : 0] commit_rob_id,
+    input wire [4 : 0] commit_rd,
+    input wire [31 : 0] commit_value,
+    input wire [`ROB_SIZE_WIDTH - 1 : 0] issue_rob_id,
+    input wire [4 : 0] issue_rd,
+
+    // get reg value: instant connection
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] ask_rob_id1,
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] ask_rob_id2,
+    input wire [31 : 0] get_value1,
+    input wire [31 : 0] get_value2,
+    input wire get_ready1,
+    input wire get_ready2,reg
+
+    // from Decoder
+    input wire [4 : 0] get_reg_value1,
+    input wire [4 : 0] get_reg_value2,
+
+    // to Decoder
+    output wire [31 : 0] reg_value1,
+    output wire [31 : 0] reg_value2,
+    output wire reg_has_dep1,
+    output wire reg_has_dep2,
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] reg_dep_rob_id1,
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] reg_dep_rob_id2,
+
+);
+
+    reg [31 : 0] regs [0 : 31];
+    reg has_dep [0 : 31];
+    reg [`ROB_SIZE_WIDTH - 1 : 0] dep_rob_id [0 : 31];
+
+    always @(posedge clk) begin
+        if(rst) begin
+            // TODO
+        end 
+        else if(!rdy) begin
+            // TODO
+        end
+        else begin
+            if(issue_rob_id != 0) begin
+                has_dep[issue_rd] <= 1;
+                dep_rob_id[issue_rd] <= get_rob_id1;
+            end
+            if(commit_rob_id != 0) begin
+                regs[commit_rd] <= commit_value;
+                if(has_dep[commit_rd] && dep_rob_id[commit_rd] == commit_rob_id) begin
+                    has_dep[commit_rd] <= 0;
+                    dep_rob_id[commit_rd] <= 0;
+                end
+            end
+        end
+    end
+
+    
+
+
+endmodule

@@ -74,7 +74,8 @@ module LSB (
                 rd_rob_id[tail] <= rd_rob_id_in;
             end
             // listen broadcast
-            for(int i = 0; i < `RS_SIZE; i = i + 1) begin
+            integer i;
+            for(i = 0; i < `RS_SIZE; i = i + 1) begin
                 if(lsb_ready) begin
                     if(v_rob_id1[i] == lsb_rob_id) begin
                         reg_value1[i] <= lsb_value;
