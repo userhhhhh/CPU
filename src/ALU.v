@@ -1,5 +1,5 @@
-// `include "config.v"
-`include "/home/hqs123/class_code/CPU/src/config.v"
+`include "config.v"
+// `include "/home/hqs123/class_code/CPU/src/config.v"
 
 module ALU(
     input wire clk,
