@@ -16,9 +16,9 @@ module Fetcher(
     input wire instr_issued,
     input wire [31 : 0] new_pc,
     // to Decoder
-    output wire instr_ready,
-    output wire [31 : 0] instr,
-    output wire [31 : 0] instr_addr,
+    output reg instr_ready,
+    output reg [31 : 0] instr,
+    output reg [31 : 0] instr_addr,
 
     // from RoB: clear
     input wire rob_clear,

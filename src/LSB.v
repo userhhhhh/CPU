@@ -38,7 +38,6 @@ module LSB (
 
     reg [`ROB_SIZE_WIDTH - 1 : 0] head, tail;
 
-
     reg busy [0 : `RS_SIZE - 1];
     reg [31 : 0] instr [0 : `RS_SIZE - 1];
     reg [31 : 0] instr_addr [0 : `RS_SIZE - 1];
@@ -50,10 +49,28 @@ module LSB (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `RS_SIZE - 1];
-
+    
+    integer i;
     always @(posedge clk) begin
         if(rst || rob_clear) begin
-            // TODO
+            head <= 0;
+            tail <= 0;
+            for(i = 0; i < `RS_SIZE; i = i + 1) begin
+                busy[i] <= 1'b0;
+                instr[i] <= 32'b0;
+                instr_addr[i] <= 32'b0;
+                instr_type[i] <= 7'b0;
+                reg_value1[i] <= 32'b0;
+                reg_value2[i] <= 32'b0;
+                has_dep1[i] <= 1'b0;
+                has_dep2[i] <= 1'b0;
+                v_rob_id1[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+                v_rob_id2[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+                rd_rob_id[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+            end
+        end
+        else if (head_rob_id != head) begin
+            // do nothing
         end
         else if (!rdy) begin
             // do nothing
@@ -75,7 +92,7 @@ module LSB (
                 rd_rob_id[tail] <= rd_rob_id_in;
             end
             // listen broadcast
-            integer i;
+            
             for(i = 0; i < `RS_SIZE; i = i + 1) begin
                 if(lsb_ready) begin
                     if(v_rob_id1[i] == lsb_rob_id) begin

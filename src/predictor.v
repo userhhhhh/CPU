@@ -1,7 +1,7 @@
 module predictor(
     input wire clk,
     input wire rst,
-    input wire rdy,
+    input wire rdy
 
 
 

@@ -1,9 +1,9 @@
-// `include "config.v"
-// `include "RS_chooser.v"
-// `include "ALU.v"
-`include "/home/hqs123/class_code/CPU/src/config.v"
-`include "/home/hqs123/class_code/CPU/src/RS_chooser.v"
-`include "/home/hqs123/class_code/CPU/src/ALU.v"
+`include "config.v"
+`include "RS_chooser.v"
+`include "ALU.v"
+// `include "/home/hqs123/class_code/CPU/src/config.v"
+// `include "/home/hqs123/class_code/CPU/src/RS_chooser.v"
+// `include "/home/hqs123/class_code/CPU/src/ALU.v"
 
 module RS (
     input wire clk,
@@ -52,14 +52,31 @@ module RS (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `RS_SIZE - 1];
 
+    reg ready [0 : `RS_SIZE - 1];
+
     // 通过 RS_chooser 选择两个line
     wire [`RS_SIZE_WIDTH - 1 : 0] free_rs_line;
     wire has_exe_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
 
+
+    
+    integer i;
     always @(posedge clk) begin
         if(rst || rob_clear) begin
-            // TODO
+            for(i = 0; i < `RS_SIZE; i = i + 1) begin
+                busy[i] <= 1'b0;
+                instr[i] <= 32'b0;
+                instr_addr[i] <= 32'b0;
+                instr_type[i] <= 7'b0;
+                reg_value1[i] <= 32'b0;
+                reg_value2[i] <= 32'b0;
+                has_dep1[i] <= 1'b0;
+                has_dep2[i] <= 1'b0;
+                v_rob_id1[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+                v_rob_id2[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+                rd_rob_id[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+            end
         end
         else if (!rdy) begin
             // do nothing
@@ -80,7 +97,7 @@ module RS (
                 rd_rob_id[free_rs_line] <= rd_rob_id_in;
             end
             // listen broadcast
-            for(int i = 0; i < `RS_SIZE; i = i + 1) begin
+            for(i = 0; i < `RS_SIZE; i = i + 1) begin
                 if(lsb_ready) begin
                     if(v_rob_id1[i] == lsb_rob_id) begin
                         reg_value1[i] <= lsb_value;
@@ -108,13 +125,14 @@ module RS (
             end
         end
     end
-
+    
+    // TODO
     ALU alu (
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
         .rob_id_in(alu_rob_id),
-        .op(instr_type[alu_rob_id][6:0]),// TODO
+        .op(instr_type[alu_rob_id][6:0]),
         .v1(reg_value1[alu_rob_id]),
     );
 
