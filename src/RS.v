@@ -37,6 +37,9 @@ module RS (
     output wire [31 : 0] rs_value,
 
     // to ALU
+    output wire valid,
+    output wire [31 : 0] v1,
+    output wire [31 : 0] v2,
     output wire [`ROB_SIZE_WIDTH - 1 : 0] alu_rob_id
 );
 
@@ -50,7 +53,7 @@ module RS (
     reg has_dep2 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
-    reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `RS_SIZE - 1];
+    reg [`ROB_SIZE_WIDTH - 1 : 0] rob_id [0 : `RS_SIZE - 1];
 
     reg ready [0 : `RS_SIZE - 1];
 
@@ -59,7 +62,42 @@ module RS (
     wire has_exe_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
 
-
+    // --------RS_chooser---------
+    wire merge_free[0 : (`RS_SIZE<<1)-1];
+    wire [`RS_SIZE_WIDTH - 1 : 0] merge_free_id [0 : (`RS_SIZE<<1)-1];
+    wire merge_exe [0 : (`RS_SIZE<<1)-1];
+    wire [`RS_SIZE_WIDTH - 1 : 0] merge_exe_id [0 : (`RS_SIZE<<1)-1];
+    assign merge_free[0] = merge_free[1];
+    assign merge_free_id[0] = merge_free_id[1];
+    assign merge_exe[0] = merge_exe[1];
+    assign merge_exe_id[0] = merge_exe_id[1];
+    generate
+        genvar gi;
+        for(gi = `RS_SIZE; gi < `RS_SIZE << 1; gi = gi + 1)
+        begin
+            assign merge_free[gi] = ~busy[gi-`RS_SIZE];
+            assign merge_free_id[gi] = gi-`RS_SIZE;
+            assign merge_exe[gi] = busy[gi-`RS_SIZE] && !has_dep1[gi-`RS_SIZE] && !has_dep2[gi-`RS_SIZE];
+            assign merge_exe_id[gi] = gi-`RS_SIZE;
+        end
+        for(gi = 1; gi < `RS_SIZE; gi = gi + 1)
+        begin
+            assign merge_free[gi] = merge_free[gi<<1] || merge_free[gi<<1|1];
+            assign merge_free_id[gi] = merge_free[gi<<1] ? merge_free_id[gi<<1] : merge_free_id[gi<<1|1];
+            assign merge_exe[gi] = merge_exe[gi<<1] || merge_exe[gi<<1|1];
+            assign merge_exe_id[gi] = merge_exe[gi<<1] ? merge_exe_id[gi<<1] : merge_exe_id[gi<<1|1];
+        end
+    endgenerate
+    assign exe_rs_line = merge_exe_id[0];
+    assign free_rs_line = merge_free_id[0];
+    assign valid = merge_exe[0];
+    // TODO
+    // assign arith_type = type[exe_rs_line];
+    assign v1 = reg_value1[exe_rs_line];
+    assign v2 = reg_value2[exe_rs_line];
+    assign alu_rob_id = rob_id[exe_rs_line];
+    // --------RS_chooser---------
+    
     
     integer i;
     always @(posedge clk) begin
@@ -75,7 +113,7 @@ module RS (
                 has_dep2[i] <= 1'b0;
                 v_rob_id1[i] <= {`ROB_SIZE_WIDTH{1'b0}};
                 v_rob_id2[i] <= {`ROB_SIZE_WIDTH{1'b0}};
-                rd_rob_id[i] <= {`ROB_SIZE_WIDTH{1'b0}};
+                rob_id[i] <= {`ROB_SIZE_WIDTH{1'b0}};
             end
         end
         else if (!rdy) begin
@@ -94,7 +132,7 @@ module RS (
                 has_dep2[free_rs_line] <= has_dep2_in;
                 v_rob_id1[free_rs_line] <= v_rob_id1_in;
                 v_rob_id2[free_rs_line] <= v_rob_id2_in;
-                rd_rob_id[free_rs_line] <= rd_rob_id_in;
+                rob_id[free_rs_line] <= rd_rob_id_in;
             end
             // listen broadcast
             for(i = 0; i < `RS_SIZE; i = i + 1) begin
@@ -125,16 +163,5 @@ module RS (
             end
         end
     end
-    
-    // TODO
-    ALU alu (
-        .clk(clk),
-        .rst(rst),
-        .rdy(rdy),
-        .rob_id_in(alu_rob_id),
-        .op(instr_type[alu_rob_id][6:0]),
-        .v1(reg_value1[alu_rob_id]),
-    );
-
 
 endmodule
