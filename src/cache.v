@@ -128,11 +128,7 @@ module cache(
 
     function [8:0] gen_mem_dout;
         input [2:0] _already_read;
-        input [2:0] _tobe_read;
         input [31:0] _ld_data;
-        if(_tobe_read) begin
-            gen_mem_dout = 0;
-        end
         case (_already_read)
             3'b000: gen_mem_dout = _ld_data[7:0];
             3'b001: gen_mem_dout = _ld_data[15:8];
@@ -141,7 +137,7 @@ module cache(
             default: gen_mem_dout = 0;
         endcase
     endfunction
-    assign mem_dout = gen_mem_dout(already_read, tobe_read, ld_data);
+    assign mem_dout = tobe_read ? 0 : gen_mem_dout(already_read, ld_data);
 
     function [31:0] gen_read_data;
         input [2:0] len;
@@ -156,6 +152,6 @@ module cache(
             default: gen_read_data = 0;
         endcase 
     endfunction
-    assign data_out = gen_read_data(cur_len, tmp_data, mem_din);
+    assign data_out = gen_read_data(len, ld_data, mem_din);
 
 endmodule
