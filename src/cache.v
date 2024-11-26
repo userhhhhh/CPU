@@ -28,6 +28,7 @@ module cache(
 
     // from LSB
     input wire in_lsb_ready,
+    input wire [2:0] op_in,
     input wire [6:0] instr_type_in,
     input wire [31:0] data_addr_in,
     input wire [31:0] data_in, // st
@@ -42,6 +43,7 @@ module cache(
     reg [2:0] state; //剩下的字节数：0，1，2，3，4
 
     // LSB
+    reg [2:0] op;
     reg [6:0] instr_type;
     reg [31:0] data_addr;
     reg [31:0] st_data; // to memory
@@ -57,6 +59,7 @@ module cache(
             cache_user <= 0;
             busy <= 0;
             state <= 0;
+            op <= 0;
             instr_type <= 0;
             data_addr <= 0;
             st_data <= 0;

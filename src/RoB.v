@@ -9,6 +9,7 @@ module RoB (
     input wire instr_valid,
     input wire instr_ready,
     input wire [31 : 0] instr,
+    input wire [2 : 0] op,
     input wire [6 : 0] instr_type,
     input wire [31 : 0] instr_addr,
     input wire [4 : 0] rd,
@@ -41,6 +42,7 @@ module RoB (
     output wire get_ready2,
 
     // issue
+    // TODO
     output wire [4:0] issue_rd, // instr result的rd
     output wire [31 : 0] issue_rob_id, // instr的rob_id
 
@@ -64,6 +66,7 @@ module RoB (
 
     reg [4:0] rds [0 : `ROB_SIZE - 1]; // 存放指令原来的rd
     reg [31:0] values [0 : `ROB_SIZE - 1]; // 存放已经算好的值
+    reg [2:0] ops [0 : `ROB_SIZE - 1];
     reg [31:0] insts [0 : `ROB_SIZE - 1];
     reg [6:0] insts_type [0 : `ROB_SIZE - 1];
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
@@ -85,6 +88,7 @@ module RoB (
                 rds[tail] <= rd;
 
                 insts[tail] <= instr;
+                ops[tail] <= op;
                 insts_type[tail] <= instr_type;
                 insts_addr[tail] <= instr_addr;
 

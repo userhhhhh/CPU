@@ -9,6 +9,7 @@ module LSB (
     input wire instr_issued,
     input wire [31 : 0] instr_in,
     input wire [31 : 0] instr_addr_in,
+    input wire [2 : 0] op_in,
     input wire [6 : 0] instr_type_in,
     input wire [31 : 0] reg_value1_in,
     input wire [31 : 0] reg_value2_in,
@@ -41,6 +42,7 @@ module LSB (
     reg busy [0 : `RS_SIZE - 1];
     reg [31 : 0] instr [0 : `RS_SIZE - 1];
     reg [31 : 0] instr_addr [0 : `RS_SIZE - 1];
+    reg [2 : 0] op [0 : `RS_SIZE - 1];
     reg [6 : 0] instr_type [0 : `RS_SIZE - 1];
     reg [31 : 0] reg_value1 [0 : `RS_SIZE - 1];
     reg [31 : 0] reg_value2 [0 : `RS_SIZE - 1];
@@ -59,6 +61,7 @@ module LSB (
                 busy[i] <= 1'b0;
                 instr[i] <= 32'b0;
                 instr_addr[i] <= 32'b0;
+                op[i] <= 3'b0;
                 instr_type[i] <= 7'b0;
                 reg_value1[i] <= 32'b0;
                 reg_value2[i] <= 32'b0;
@@ -82,6 +85,7 @@ module LSB (
                 busy[tail] <= 1;
                 instr[tail] <= instr_in;
                 instr_addr[tail] <= instr_addr_in;
+                op[tail] <= op_in;
                 instr_type[tail] <= instr_type_in;
                 reg_value1[tail] <= reg_value1_in;
                 reg_value2[tail] <= reg_value2_in;

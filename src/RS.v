@@ -13,6 +13,7 @@ module RS (
     input wire instr_issued,
     input wire [31 : 0] instr_in,
     input wire [31 : 0] instr_addr_in,
+    input wire [2 : 0] op_in,
     input wire [6 : 0] instr_type_in,
     input wire [31 : 0] reg_value1_in,
     input wire [31 : 0] reg_value2_in,
@@ -36,15 +37,20 @@ module RS (
     output wire [31 : 0] rs_value,
 
     // to ALU
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] alu_rob_id,
     output wire valid,
+    output wire [2:0] op_out,
+    output wire [6:0] instr_type_out,
+    output wire op_other,
     output wire [31 : 0] v1,
-    output wire [31 : 0] v2,
-    output wire [`ROB_SIZE_WIDTH - 1 : 0] alu_rob_id
+    output wire [31 : 0] v2
+    
 );
 
     reg busy [0 : `RS_SIZE - 1];
     reg [31 : 0] instr [0 : `RS_SIZE - 1];
     reg [31 : 0] instr_addr [0 : `RS_SIZE - 1];
+    reg [2 : 0] op [0 : `RS_SIZE - 1];
     reg [6 : 0] instr_type [0 : `RS_SIZE - 1];
     reg [31 : 0] reg_value1 [0 : `RS_SIZE - 1];
     reg [31 : 0] reg_value2 [0 : `RS_SIZE - 1];
@@ -89,12 +95,14 @@ module RS (
     endgenerate
     assign exe_rs_line = merge_exe_id[0];
     assign free_rs_line = merge_free_id[0];
+
     assign valid = merge_exe[0];
-    // TODO
-    // assign arith_type = type[exe_rs_line];
+    assign op_out = op[exe_rs_line];
+    assign alu_rob_id = rob_id[exe_rs_line];
+    assign op_other = instr[exe_rs_line][30];
+    assign instr_type_out = instr_type[exe_rs_line];
     assign v1 = reg_value1[exe_rs_line];
     assign v2 = reg_value2[exe_rs_line];
-    assign alu_rob_id = rob_id[exe_rs_line];
     // --------RS_chooser---------
     
     
@@ -105,6 +113,7 @@ module RS (
                 busy[i] <= 1'b0;
                 instr[i] <= 32'b0;
                 instr_addr[i] <= 32'b0;
+                op[i] <= 3'b0;
                 instr_type[i] <= 7'b0;
                 reg_value1[i] <= 32'b0;
                 reg_value2[i] <= 32'b0;
@@ -124,6 +133,7 @@ module RS (
                 busy[free_rs_line] <= 1;
                 instr[free_rs_line] <= instr_in;
                 instr_addr[free_rs_line] <= instr_addr_in;
+                op[free_rs_line] <= op_in;
                 instr_type[free_rs_line] <= instr_type_in;
                 reg_value1[free_rs_line] <= reg_value1_in;
                 reg_value2[free_rs_line] <= reg_value2_in;

@@ -15,6 +15,7 @@ module Decoder(
     output wire instr_issued,
     output wire [31 : 0] instr_out,
     output wire [31 : 0] instr_addr_out,
+    output wire [2 : 0] op_out,
     output wire [6 : 0] instr_type_out,
     output wire [31 : 0] reg_value1_out,
     output wire [31 : 0] reg_value2_out,
@@ -43,6 +44,7 @@ module Decoder(
 
     assign instr_out = instr_in;
     assign instr_addr_out = instr_addr_in;
+    assign op_out = instr_in[14:12];
     assign instr_type_out = instr_in[6:0];
     assign reg_id1 = instr_in[19:15];
     assign reg_id2 = instr_in[24:20];
@@ -51,7 +53,8 @@ module Decoder(
         case (instr_type)
             `LUI, `AUIPC: get_imm = {inst[31:12], 12'b0};
             `JAL: get_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
-            `JALR: get_imm = {{20{inst[31]}}, inst[31:20]}; // Assuming similar to I_TYPE
+            // TODO
+            `JALR: get_imm = {{20{inst[31]}}, inst[31:20]};
             `B_TYPE: get_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
             `LD_TYPE, `I_TYPE: get_imm = {{20{inst[31]}}, inst[31:20]};
             `S_TYPE: get_imm = {{20{inst[31]}}, inst[31:25], inst[11:7]};
