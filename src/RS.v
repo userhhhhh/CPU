@@ -1,5 +1,4 @@
 `include "config.v"
-`include "RS_chooser.v"
 `include "ALU.v"
 // `include "/home/hqs123/class_code/CPU/src/config.v"
 // `include "/home/hqs123/class_code/CPU/src/RS_chooser.v"
