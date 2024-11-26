@@ -49,7 +49,6 @@ module cache(
 
     reg [31:0] cur_addr;
     
-
     always @(posedge clk) begin
         if(rst || rob_clear) begin
             cache_user <= 2'b0;
@@ -119,7 +118,6 @@ module cache(
             end
         end
     end
-
 
     wire busy_mem_a, free_mem_a;
     assign busy_mem_a = busy ? (data_addr + already_read) : 0;

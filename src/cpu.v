@@ -1,6 +1,7 @@
 // RISCV32 CPU top module
 // port modification allowed for debugging purposes
 
+`include "config.v"
 
 module cpu(
   input  wire                 clk_in,			// system clock signal
@@ -33,176 +34,46 @@ module cpu(
   wire rob_clear;
   wire [31:0] back_pc;
 
+  // RoB to Reg: commit
+  wire [`ROB_SIZE_WIDTH - 1 : 0] commit_rob_id;
+  wire [4 : 0] commit_rd;
+  wire [31 : 0] commit_value;
+
+  // 
+
+  
+
   Reg reg_instance (
     .clk(clk_in),
     .rst(rst_in),
     .rdy(rdy_in),
-    .commit_rob_id(), 
-    .commit_rd(), 
-    .commit_value(), 
-    .issue_rob_id(), 
-    .issue_rd(), 
-    .ask_rob_id1(), 
-    .ask_rob_id2(), 
-    .get_value1(), 
-    .get_value2(), 
-    .get_ready1(), 
-    .get_ready2(), 
-    .get_reg_value1(), 
-    .get_reg_value2(), 
-    .reg_value1(), 
-    .reg_value2(), 
-    .reg_has_dep1(), 
-    .reg_has_dep2(), 
-    .reg_dep_rob_id1(), 
-    .reg_dep_rob_id2() 
-  );
 
-  RoB rob_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-    .instr_valid(), 
-    .instr_ready(), 
-    .instr(), 
-    .instr_type(), 
-    .instr_addr(), 
-    .rd(), 
-    .rs1(), 
-    .imm(), 
-    .rs_ready(), 
-    .rs_rob_id(), 
-    .rs_value(), 
-    .lsb_ready(), 
-    .lsb_rob_id(), 
-    .lsb_value(), 
-    .commit_rob_id(), 
-    .commit_rd(), 
-    .commit_value(), 
-    .issue_rob_id(), 
-    .issue_rd(), 
-    .get_rob_id1(), 
-    .get_rob_id2(), 
-    .get_value1(), 
-    .get_value2(), 
-    .get_ready1(), 
-    .get_ready2(), 
-    .issue_rd(), 
-    .issue_rob_id(), 
-    .next_pc(), 
-    .pc_frozen(), 
-    .clear() 
-  );
+    // from RoB
+    .commit_rob_id(commit_rob_id),
+    .commit_rd(commit_rd),
+    .commit_value(commit_value),
+    .issue_rob_id(),
+    .issue_rd(),
 
-  LSB lsb_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-    .rob_clear(), 
-    .head_rob_id(), 
-    .lsb_ready(), 
-    .lsb_rob_id(), 
-    .lsb_value(), 
-    .tail_rob_id(), 
-    .tail_rd(), 
-    .tail_value() 
-  );
+    // get reg value: instant connection
+    .ask_rob_id1(),
+    .ask_rob_id2(),
+    .get_value1(),
+    .get_value2(),
+    .get_ready1(),
+    .get_ready2(),
 
-  RS rs_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-    .instr_issued(), 
-    .instr_in(), 
-    .instr_addr_in(), 
-    .instr_type_in(), 
-    .reg_value1_in(), 
-    .reg_value2_in(), 
-    .has_dep1_in(), 
-    .has_dep2_in(), 
-    .v_rob_id1_in(), 
-    .v_rob_id2_in(), 
-    .rd_rob_id_in(), 
-    .lsb_ready(), 
-    .lsb_rob_id(), 
-    .lsb_value(), 
-    .rob_clear(), 
-    .rs_ready(), 
-    .rs_rob_id(), 
-    .rs_value(), 
-    .alu_rob_id() 
-  );
+    // from Decoder
+    .get_reg_value1(),
+    .get_reg_value2(),
 
-  Decoder decoder_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-    .instr_valid(), 
-    .instr_ready(), 
-    .instr(), 
-    .instr_type(), 
-    .instr_addr(), 
-    .rd(), 
-    .rs1(), 
-    .imm(), 
-    .instr_issued(), 
-    .instr_in(), 
-    .instr_addr_in(), 
-    .instr_type_in(), 
-    .reg_value1_in(), 
-    .reg_value2_in(), 
-    .has_dep1_in(), 
-    .has_dep2_in(), 
-    .v_rob_id1_in(), 
-    .v_rob_id2_in(), 
-    .rd_rob_id_in(), 
-    .rs_ready(), 
-    .rs_rob_id(), 
-    .rs_value(), 
-    .lsb_ready(), 
-    .lsb_rob_id(), 
-    .lsb_value(), 
-    .rob_clear(), 
-    .commit_rob_id(), 
-    .commit_rd(), 
-    .commit_value(), 
-    .issue_rob_id(), 
-    .issue_rd(), 
-    .get_rob_id1(), 
-    .get_rob_id2(), 
-    .get_value1(), 
-    .get_value2(), 
-    .get_ready1(), 
-    .get_ready2(), 
-    .issue_rd(), 
-    .issue_rob_id(), 
-    .next_pc(), 
-    .pc_frozen(), 
-    .clear() 
-  );
-
-  Fetcher fetcher_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-    .pc(), 
-    .pc_frozen(), 
-    .next_pc(), 
-    .instr_valid(), 
-    .instr_ready(), 
-    .instr(), 
-    .instr_type(), 
-    .instr_addr() 
-  );
-
-  cache cache_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-    .mem_din(), 
-    .mem_dout(), 
-    .mem_a(), 
-    .mem_wr() 
+    // to Decoder
+    .reg_value1(),
+    .reg_value2(),
+    .reg_has_dep1(),
+    .reg_has_dep2(),
+    .reg_dep_rob_id1(),
+    .reg_dep_rob_id2()
   );
 
 always @(posedge clk_in)

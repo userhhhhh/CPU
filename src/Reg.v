@@ -39,7 +39,6 @@ module Reg (
     reg [`ROB_SIZE_WIDTH - 1 : 0] dep_rob_id [0 : 31];
 
     // Decoder 给一个 reg_id，Reg 返回这个 reg_id 对应的值或者依赖的 RoB_id
-    // TODO: RoB和Reg实时交流
     wire has_issued_1, has_issued_2;
     assign has_issued_1 = has_dep[get_reg_value1] || ((issue_rob_id == ask_rob_id1) && (ask_rob_id1 != 0));//
     assign has_issued_2 = has_dep[get_reg_value2] || ((issue_rob_id == ask_rob_id2) && (ask_rob_id2 != 0));//

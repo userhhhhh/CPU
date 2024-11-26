@@ -1,5 +1,5 @@
-// `include "config.v"
-`include "/home/hqs123/class_code/CPU/src/config.v"
+`include "config.v"
+// `include "/home/hqs123/class_code/CPU/src/config.v"
 module RoB (
     input wire clk,
     input wire rst,
@@ -40,11 +40,6 @@ module RoB (
     output wire [31 : 0] get_value2,
     output wire get_ready1,
     output wire get_ready2,
-
-    // issue
-    // TODO
-    output wire [4:0] issue_rd, // instr result的rd
-    output wire [31 : 0] issue_rob_id, // instr的rob_id
 
     // the pc
     output reg [31 : 0] next_pc,
@@ -201,28 +196,18 @@ module RoB (
 
     // to reg: issue and commit
     // 这里一定要实时更新，不然会出现数据丢失
-    wire head_change_reg = !(insts_type[head] == `B_TYPE || insts_type[head] == `S_TYPE); // 表示RoB是否对reg进行了修改
-    if(rdy && busy[head] && ready[head] && head_change_reg) begin
-        assign commit_rob_id = head;
-        assign commit_rd = rds[head];
-        assign commit_value = values[head];
-    end 
-    else begin
-        assign commit_rob_id = 0;
-        assign commit_rd = 0;
-        assign commit_value = 0;
-    end 
+    wire head_change_reg, update_head;
+    assign head_change_reg = !(insts_type[head] == `B_TYPE || insts_type[head] == `S_TYPE); // 表示RoB是否对reg进行了修改
+    assign update_head = rdy && head_change_reg && busy[head] && ready[head];
+    assign commit_rob_id = update_head ? head : 0;
+    assign commit_rd = update_head ? rds[head] : 0;
+    assign commit_value = update_head ? values[head] : 0;
 
-    wire tail_change_reg = !(instr_type == `B_TYPE || instr_type == `S_TYPE); // 表示RoB是否对reg进行了修改
-    // TODO: instr_valid
-    if(rdy && tail_change_reg) begin
-        assign issue_rob_id = tail;
-        assign issue_rd = rd;
-    end
-    else begin
-        assign issue_rob_id = 0;
-        assign issue_rd = 0;
-    end
+    wire tail_change_reg, update_tail;
+    assign tail_change_reg = !(instr_type == `B_TYPE || instr_type == `S_TYPE); // 表示RoB是否对reg进行了修改
+    assign update_tail = rdy && tail_change_reg;// TODO: instr_valid
+    assign issue_rob_id = update_tail ? tail : 0;
+    assign issue_rd = update_tail ? rd : 0;
 
     // get reg value: instant connection
     wire rs_value_ready1 = rs_ready && rs_rob_id == get_rob_id1;
@@ -233,29 +218,7 @@ module RoB (
     wire decoder_value_ready2 = instr_ready && tail == get_rob_id2;
     assign get_ready1 = rs_value_ready1 || lsb_value_ready1 || decoder_value_ready1;
     assign get_ready2 = rs_value_ready2 || lsb_value_ready2 || decoder_value_ready2;
-    if(rs_value_ready1) begin
-        assign get_value1 = rs_value;
-    end
-    else if(lsb_value_ready1) begin
-        assign get_value1 = lsb_value;
-    end
-    else if(decoder_value_ready1) begin
-        assign get_value1 = values[tail];
-    end
-    else begin
-        assign get_value1 = 0;
-    end
-    if(rs_value_ready2) begin
-        assign get_value2 = rs_value;
-    end
-    else if(lsb_value_ready2) begin
-        assign get_value2 = lsb_value;
-    end
-    else if(decoder_value_ready2) begin
-        assign get_value2 = values[tail];
-    end
-    else begin
-        assign get_value2 = 0;
-    end
+    assign get_value1 = rs_value_ready1 ? rs_value : (lsb_value_ready1 ? lsb_value : (decoder_value_ready1 ? values[tail] : 0));
+    assign get_value2 = rs_value_ready2 ? rs_value : (lsb_value_ready2 ? lsb_value : (decoder_value_ready2 ? values[tail] : 0));
 
 endmodule
