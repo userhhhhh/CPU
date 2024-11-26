@@ -52,8 +52,6 @@ module Reg (
     assign ask_rob_id1 = has_issued_1 ? dep_rob_id[get_reg_value1] : issue_rob_id;
     assign ask_rob_id2 = has_issued_2 ? dep_rob_id[get_reg_value2] : issue_rob_id;
 
-    
-
     integer i;
     always @(posedge clk) begin
         if(rst) begin
