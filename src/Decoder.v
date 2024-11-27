@@ -16,7 +16,7 @@ module Decoder(
     input wire [31 : 0] instr_addr_in,
 
     // to fetcher
-    output wire predict_pc,
+    output wire [31 : 0] predict_pc,
 
     // to RS and LSB and RoB
     output wire instr_issued,// and to fetcher
@@ -78,8 +78,18 @@ module Decoder(
     endfunction
 
     assign imm = get_imm(instr_in, instr_type_out);
+
+    predictor predictor_instance(
+        .clk(clk),
+        .rst(rst),
+        .rdy(rdy),
+        .pc(0),
+        .instr(instr_in),
+        .imm(imm),
+        .new_pc(predict_pc)
+    );
     
-    // TODO
+    // TODO:predict_pc
     wire has_rs2, has_rd;
     assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
     assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
