@@ -30,7 +30,9 @@ module cache(
     input wire [31:0] data_addr_in,
     input wire [31:0] data_in, // st
     // to LSB
+    output wire welcome_lsb,
     output wire out_lsb_ready,
+    output wire [6:0] instr_type_out,
     output wire [31:0] data_out // ld
 
 );

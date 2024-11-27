@@ -66,15 +66,38 @@ module RoB (
     reg [6:0] insts_type [0 : `ROB_SIZE - 1];
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
 
+    integer i;
+
+    // clear: 清空RoB
+    always @(posedge clk) begin
+        if(rst || (clear && rdy)) begin
+            head <= 0;
+            tail <= 0;
+            for(i = 0; i < `ROB_SIZE; i = i + 1) begin
+                busy[i] <= 0;
+                ready[i] <= 0;
+                rds[i] <= 0;
+                values[i] <= 0;
+                ops[i] <= 0;
+                insts[i] <= 0;
+                insts_type[i] <= 0;
+                insts_addr[i] <= 0;
+            end
+        end
+        else if(!rdy) begin
+            // do nothing
+        end
+        else begin
+            // do nothing
+        end
+    end
+
     // issue: 接受从Decoder传来的指令
     always @(posedge clk) begin
-        if(rst) begin
-            // TODO
+        if(rst || (clear && rdy) || !rdy) begin
+             // do nothing
         end 
-        if(rst || (clear && rdy)) begin
-            // TODO
-        end
-        else if(rdy) begin
+        else begin
             if(instr_valid) begin
                 tail <= tail + 1;
 
@@ -88,38 +111,10 @@ module RoB (
                 insts_addr[tail] <= instr_addr;
 
                 case (instr_type)
-                    `LUI: begin
-                        values[tail] <= imm;
-                    end
-                    `AUIPC: begin
-                        values[tail] <= instr_addr + imm;
-                    end
-                    `JAL: begin
-                        values[tail] <= instr_addr + 4;
-                    end
-                    `JALR: begin
-                        values[tail] <= instr_addr + 4;
-                    end
-                    `B_TYPE: begin
-                        // TODO
-                        pc_frozen <= 1;
-                        next_pc <= instr_addr + imm;
-                    end
-                    `LD_TYPE: begin
-                        // do nothing
-                    end
-                    `S_TYPE: begin
-                        // do nothing
-                    end
-                    `I_TYPE: begin
-                        // do nothing
-                    end
-                    `R_TYPE: begin
-                        // do nothing
-                    end
-                    default: begin
-                        // do nothing
-                    end
+                    `LUI: values[tail] <= imm;
+                    `AUIPC: values[tail] <= instr_addr + imm;
+                    `JAL: values[tail] <= instr_addr + 4;
+                    default: values[tail] <= 0;
                 endcase
             end
         end
@@ -127,13 +122,10 @@ module RoB (
 
     // receive: 听RS、LSB的广播
     always @(posedge clk) begin
-        if (rst) begin
-            // TODO
+        if(rst|| (clear && rdy) || !rdy) begin
+             // do nothing
         end 
-        if (rst || (clear && rdy)) begin
-            // TODO
-        end
-        else if (rdy) begin
+        else begin
             if(rs_ready) begin
                 ready[rs_rob_id] <= 1;
                 values[rs_rob_id] <= rs_value;
@@ -147,49 +139,20 @@ module RoB (
 
     // commit: 向RS、LSB广播
     always @(posedge clk) begin
-        if (rst) begin
-            // TODO
+        if(rst|| (clear && rdy) || !rdy) begin
+             // do nothing
         end 
-        if (rst || (clear && rdy)) begin
-            // TODO
-        end
-        else if (rdy) begin
+        else begin
             if(busy[head] && ready[head]) begin
                 head <= head + 1;
                 busy[head] <= 0;
                 ready[head] <= 0;
-                case (insts_type[head])
-                    `LUI: begin
-                        
-                    end
-                    `AUIPC: begin
-                        
-                    end
-                    `JAL: begin
-                        
-                    end
-                    `JALR: begin
-                        
-                    end
-                    `B_TYPE: begin
-
-                    end
-                    `LD_TYPE: begin
-
-                    end
-                    `S_TYPE: begin
-
-                    end
-                    `I_TYPE: begin
-
-                    end
-                    `R_TYPE: begin
-
-                    end
-                    default: begin
-
-                    end
-                endcase
+                rds[head] <= 0;
+                values[head] <= 0;
+                ops[head] <= 0;
+                insts[head] <= 0;
+                insts_type[head] <= 0;
+                insts_addr[head] <= 0;
             end
         end
     end
