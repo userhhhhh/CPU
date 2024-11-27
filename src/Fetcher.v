@@ -13,12 +13,14 @@ module Fetcher(
     // to cache
     output wire start_fetch,
     output reg [31 : 0] pc,
+    // from cache
     input wire instr_ready_in,
     input wire [31 : 0] instr_in,
+    input wire [31 : 0] instr_addr_in,
 
     // from Decoder
     input wire instr_issued,
-    input wire [31 : 0] new_pc,
+    input wire [31 : 0] predictor_pc,
     // to Decoder
     output reg instr_ready,
     output reg [31 : 0] instr,
@@ -27,7 +29,7 @@ module Fetcher(
 );
 
     wire issue_pc;
-    assign issue_pc = instr_issued ? new_pc : pc + 4;
+    assign issue_pc = rob_clear ? predictor_pc : pc + 4;
     
     always @(posedge clk) begin
         if(rst) begin

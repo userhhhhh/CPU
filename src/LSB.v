@@ -5,6 +5,9 @@ module LSB (
     input wire rst,
     input wire rdy,
 
+    // to decoder
+    output wire lsb_full,
+
     // from Decoder
     input wire instr_issued,
     input wire [31 : 0] instr_in,
@@ -66,6 +69,8 @@ module LSB (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `RS_SIZE - 1];
+
+    assign lsb_full = (head == tail && busy[head]);
 
     assign lsb_ready = cache_ready;
     assign lsb_rob_id = cache_exe_rob_id;

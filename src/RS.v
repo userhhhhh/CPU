@@ -9,6 +9,9 @@ module RS (
     input wire rst,
     input wire rdy,
 
+    // to Decoder
+    output wire rs_full,
+
     // from Decoder
     input wire instr_issued,
     input wire [31 : 0] instr_in,
@@ -66,6 +69,9 @@ module RS (
     wire [`RS_SIZE_WIDTH - 1 : 0] free_rs_line;
     wire has_exe_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
+
+    // TODO
+    // assign rs_full = (head == tail && busy[head]);
 
     // --------RS_chooser---------
     wire merge_free[0 : (`RS_SIZE<<1)-1];

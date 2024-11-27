@@ -5,6 +5,10 @@ module RoB (
     input wire rst,
     input wire rdy,
 
+    // to decoder
+    output wire rob_full,
+    output wire rd_rob_id,
+
     // from Decoder
     input wire instr_valid,
     input wire instr_ready,
@@ -13,7 +17,6 @@ module RoB (
     input wire [6 : 0] instr_type,
     input wire [31 : 0] instr_addr,
     input wire [4 : 0] rd,
-    input wire [4 : 0] rs1,
     input wire [31 : 0] imm,
 
     // from RS
@@ -25,6 +28,9 @@ module RoB (
     input wire lsb_ready,
     input wire [`ROB_SIZE_WIDTH - 1 : 0] lsb_rob_id,
     input wire [31 : 0] lsb_value,
+
+    // to LSB
+    output wire [`ROB_SIZE_WIDTH : 0] head_rob_id,
 
     // to Reg: issue and commit
     output wire [`ROB_SIZE_WIDTH - 1 : 0] commit_rob_id,
@@ -41,16 +47,16 @@ module RoB (
     output wire get_ready1,
     output wire get_ready2,
 
-    // the pc
-    output reg [31 : 0] next_pc,
-    output reg pc_frozen,
-
     // the predictor
-    output reg clear
+    output wire clear,
+    output wire [31 : 0] back_pc
 
 );
 
-    // TODO: predictor
+    // predictor
+    assign clear = busy[head] && ready[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
+    assign back_pc = clear ? instr_addr[head] + 32'h4 : 0;
+    assign head_rob_id = head;
 
     // 循环队列
     reg [`ROB_SIZE_WIDTH - 1 : 0] head, tail;
@@ -156,6 +162,9 @@ module RoB (
             end
         end
     end
+
+    assign rob_full = (head == tail && busy[head]);
+    assign rd_rob_id = tail;
 
     // to reg: issue and commit
     // 这里一定要实时更新，不然会出现数据丢失
