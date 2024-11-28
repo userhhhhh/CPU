@@ -1,5 +1,6 @@
 `include "config.v"
-// `include "/home/hqs123/class_code/CPU/src/config.v"
+
+// taught by graceq
 module cache(
     input wire clk,
     input wire rst,
@@ -50,6 +51,15 @@ module cache(
     reg [31:0] ld_data; // from memory
 
     reg [31:0] cur_addr;
+
+    assign out_fetcher_ready = (cache_user == 1) && busy && (tobe_read == 0);
+    assign instr_out = out_fetcher_ready ? {mem_din[7:0], ld_data[23:0]} : 0;
+    assign instr_addr_out = out_fetcher_ready ? data_addr : 0;
+    
+    assign welcome_lsb = !in_fetcher_ready || out_fetcher_ready;
+    
+    assign out_lsb_ready = (cache_user == 2) && busy && (tobe_read == 0);
+    assign instr_type_out = instr_type_in;
     
     always @(posedge clk) begin
         if(rst || rob_clear) begin
@@ -70,6 +80,7 @@ module cache(
         else begin
             if(!busy && !out_lsb_ready && !out_fetcher_ready) begin
                 if(in_lsb_ready) begin
+                    busy <= 1'b1;
                     cache_user <= 2'b10;
                     len <= (3'b1<<$unsigned(op_in[1:0]))-1;
                     tobe_read <= (3'b1<<$unsigned(op_in[1:0]))-1;
@@ -79,6 +90,7 @@ module cache(
                     data_addr <= data_addr_in;
                 end
                 else if(in_fetcher_ready) begin // TODO
+                    busy <= 1'b1;
                     cache_user <= 2'b01;
                     len <= 3'b011;
                     tobe_read <= 3'b011;
