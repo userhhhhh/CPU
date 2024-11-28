@@ -36,7 +36,7 @@ module Decoder(
     // to RoB and LSB
     output wire [31 : 0] imm,
     // to RoB
-    output wire [31 : 0] rd,
+    output wire [4 : 0] rd,
 
     // to Reg
     output wire [4 : 0] reg_id1,
@@ -54,6 +54,8 @@ module Decoder(
     input wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_in
 
 );
+
+    // TODO: something to be done?
 
     assign instr_out = instr_in;
     assign instr_addr_out = instr_addr_in;
@@ -83,13 +85,12 @@ module Decoder(
         .clk(clk),
         .rst(rst),
         .rdy(rdy),
-        .pc(0),
+        .pc(instr_addr_in),
         .instr(instr_in),
         .imm(imm),
         .new_pc(predict_pc)
     );
     
-    // TODO:predict_pc
     wire has_rs2, has_rd;
     assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
     assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);

@@ -185,7 +185,7 @@ module cpu(
 
     // from Decoder
     .instr_issued(decoder_fetcher_instr_issued),
-    .new_pc(decoder_fetcher_new_pc),
+    .predictor_pc(decoder_fetcher_new_pc),
     // to Decoder
     .instr_ready(fetcher_decoder_instr_ready),
     .instr(fetcher_decoder_instr),
@@ -207,9 +207,9 @@ module cpu(
   wire [31 : 0] decoder_imm;
 
   // decoder and RoB: decoder to RoB rd
-  wire [31 : 0] actual_rd;
+  wire [4 : 0] actual_rd;
   // decoder and RoB：rd_rob_id
-  wire [31 : 0] rob_decoder_rd_rob_id;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] rob_decoder_rd_rob_id;
 
   Decoder decoder_instance (
     .clk(clk_in),
@@ -274,7 +274,7 @@ module cpu(
   wire [`ROB_SIZE_WIDTH - 1 : 0] lsb_rob_rob_id;
   wire [31 : 0] lsb_rob_value;
 
-  wire [`ROB_SIZE_WIDTH : 0] head_rob_id;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] head_rob_id;
 
   RoB rob_instance (
     .clk(clk_in),

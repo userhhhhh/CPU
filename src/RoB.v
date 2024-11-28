@@ -7,7 +7,7 @@ module RoB (
 
     // to decoder
     output wire rob_full,
-    output wire rd_rob_id,
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id,
 
     // from Decoder
     input wire instr_valid,
@@ -30,7 +30,7 @@ module RoB (
     input wire [31 : 0] lsb_value,
 
     // to LSB
-    output wire [`ROB_SIZE_WIDTH : 0] head_rob_id,
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] head_rob_id,
 
     // to Reg: issue and commit
     output wire [`ROB_SIZE_WIDTH - 1 : 0] commit_rob_id,
