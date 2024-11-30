@@ -94,7 +94,7 @@ module cache(
                     cache_user <= 2'b01;
                     len <= 3'b011;
                     tobe_read <= 3'b011;
-                    already_read <= 3'b0;
+                    already_read <= 3'b1; //错误：开始就读了，初始值是1不是0
                     op <= 3'b0;
                     instr_type <= 7'b0;
                     data_addr <= instr_addr;
@@ -102,13 +102,8 @@ module cache(
             end
             else begin
                 case(tobe_read)
-                    3'b100: begin
-                        ld_data[31:24] <= mem_din;
-                        already_read <= already_read + 1;
-                        tobe_read <= tobe_read - 1;
-                    end
                     3'b011: begin
-                        ld_data[23:16] <= mem_din;
+                        ld_data[7:0] <= mem_din;
                         already_read <= already_read + 1;
                         tobe_read <= tobe_read - 1;
                     end
@@ -118,7 +113,7 @@ module cache(
                         tobe_read <= tobe_read - 1;
                     end
                     3'b001: begin
-                        ld_data[7:0] <= mem_din;
+                        ld_data[23:16] <= mem_din;
                         already_read <= already_read + 1;
                         tobe_read <= tobe_read - 1;
                     end
@@ -133,8 +128,9 @@ module cache(
         end
     end
 
-    wire busy_mem_a, free_mem_a;
-    assign busy_mem_a = busy ? (data_addr + already_read) : 0;
+    // mem_a 实时更新
+    wire [31 : 0] busy_mem_a, free_mem_a;
+    assign busy_mem_a = busy ? ((already_read <= 3) ? data_addr + already_read : 0) : 0; //错误：最后一个要置0
     assign free_mem_a = in_lsb_ready ? data_addr : instr_addr;
     assign mem_a = busy ? busy_mem_a : free_mem_a;
 

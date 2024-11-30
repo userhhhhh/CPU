@@ -28,7 +28,7 @@ module Fetcher(
 
 );
 
-    wire issue_pc;
+    wire [31 : 0] issue_pc;
     assign issue_pc = rob_clear ? predictor_pc : pc + 4;
     
     always @(posedge clk) begin
@@ -51,7 +51,7 @@ module Fetcher(
             end
             if(instr_issued) begin
                 start_fetch <= 1;
-                pc <= back_pc;
+                pc <= issue_pc;
                 instr_ready <= 0;
                 instr <= 0;
                 instr_addr <= 0;

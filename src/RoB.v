@@ -10,7 +10,7 @@ module RoB (
     output wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id,
 
     // from Decoder
-    input wire instr_valid,
+    input wire issue_signal,
     input wire instr_ready,
     input wire [31 : 0] instr,
     input wire [2 : 0] op,
@@ -54,7 +54,7 @@ module RoB (
 );
 
     // predictor
-    assign clear = busy[head] && ready[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
+    assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
     assign back_pc = clear ? instr_addr[head] + 32'h4 : 0;
     assign head_rob_id = head;
 
@@ -63,7 +63,7 @@ module RoB (
 
     // 记录每个指令的状态
     reg busy [0 : `ROB_SIZE - 1]; // 是否已经有指令了
-    reg ready [0 : `ROB_SIZE - 1]; // 是否已经等到值了
+    reg prepared [0 : `ROB_SIZE - 1]; // 是否已经等到值了
 
     reg [4:0] rds [0 : `ROB_SIZE - 1]; // 存放指令原来的rd
     reg [31:0] values [0 : `ROB_SIZE - 1]; // 存放已经算好的值
@@ -76,12 +76,12 @@ module RoB (
 
     // clear: 清空RoB
     always @(posedge clk) begin
-        if(rst || (clear && rdy)) begin
+        if(rst || (clear && rdy) || !instr_ready) begin
             head <= 0;
             tail <= 0;
             for(i = 0; i < `ROB_SIZE; i = i + 1) begin
                 busy[i] <= 0;
-                ready[i] <= 0;
+                prepared[i] <= 0;
                 rds[i] <= 0;
                 values[i] <= 0;
                 ops[i] <= 0;
@@ -98,19 +98,20 @@ module RoB (
         end
     end
 
+    wire init_prepared;
+    assign init_prepared = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
+
     // issue: 接受从Decoder传来的指令
     always @(posedge clk) begin
-        if(rst || (clear && rdy) || !rdy) begin
+        if(rst || (clear && rdy) || !rdy || !instr_ready) begin
              // do nothing
         end 
         else begin
-            if(instr_valid) begin
+            if(issue_signal) begin
                 tail <= tail + 1;
-
                 busy[tail] <= 1;
-                ready[tail] <= instr_ready;
+                prepared[tail] <= init_prepared;
                 rds[tail] <= rd;
-
                 insts[tail] <= instr;
                 ops[tail] <= op;
                 insts_type[tail] <= instr_type;
@@ -128,16 +129,16 @@ module RoB (
 
     // receive: 听RS、LSB的广播
     always @(posedge clk) begin
-        if(rst|| (clear && rdy) || !rdy) begin
+        if(rst|| (clear && rdy) || !rdy || !instr_ready) begin
              // do nothing
         end 
         else begin
             if(rs_ready) begin
-                ready[rs_rob_id] <= 1;
+                prepared[rs_rob_id] <= 1;
                 values[rs_rob_id] <= rs_value;
             end
             if(lsb_ready) begin
-                ready[lsb_rob_id] <= 1;
+                prepared[lsb_rob_id] <= 1;
                 values[lsb_rob_id] <= lsb_value;
             end
         end
@@ -145,14 +146,14 @@ module RoB (
 
     // commit: 向RS、LSB广播
     always @(posedge clk) begin
-        if(rst|| (clear && rdy) || !rdy) begin
+        if(rst|| (clear && rdy) || !rdy || !instr_ready) begin
              // do nothing
         end 
         else begin
-            if(busy[head] && ready[head]) begin
+            if(busy[head] && prepared[head]) begin
                 head <= head + 1;
                 busy[head] <= 0;
-                ready[head] <= 0;
+                prepared[head] <= 0;
                 rds[head] <= 0;
                 values[head] <= 0;
                 ops[head] <= 0;
@@ -170,7 +171,7 @@ module RoB (
     // 这里一定要实时更新，不然会出现数据丢失
     wire head_change_reg, update_head;
     assign head_change_reg = !(insts_type[head] == `B_TYPE || insts_type[head] == `S_TYPE); // 表示RoB是否对reg进行了修改
-    assign update_head = rdy && head_change_reg && busy[head] && ready[head];
+    assign update_head = rdy && head_change_reg && busy[head] && prepared[head];
     assign commit_rob_id = update_head ? head : 0;
     assign commit_rd = update_head ? rds[head] : 0;
     assign commit_value = update_head ? values[head] : 0;

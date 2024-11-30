@@ -75,6 +75,11 @@ module LSB (
     assign lsb_ready = cache_ready;
     assign lsb_rob_id = cache_exe_rob_id;
     assign lsb_value = instr_type_out == `LD_TYPE ? cache_data_out : 0;
+
+    // 判断这条指令是否进入LSB
+    wire judge_instr, accept_instr;
+    assign judge_instr = (instr_type_in == `LD_TYPE || instr_type_in == `S_TYPE);
+    assign accept_instr = instr_issued && !lsb_full && judge_instr;
     
     integer i;
     always @(posedge clk) begin
@@ -114,7 +119,7 @@ module LSB (
             end
 
             // add instr
-            if (instr_issued) begin
+            if (accept_instr) begin
                 tail <= tail + 1;
                 cache_exe <= 0;
                 cache_exe_rob_id <= 0;

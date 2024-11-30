@@ -286,7 +286,7 @@ module cpu(
     .rd_rob_id(rob_decoder_rd_rob_id),
 
     // from Decoder
-    .instr_valid(decoder_fetcher_instr_issued),
+    .issue_signal(decoder_fetcher_instr_issued),
     .instr_ready(fetcher_decoder_instr_ready),
     .instr(decoder_instr),
     .op(decoder_op),

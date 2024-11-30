@@ -55,7 +55,8 @@ module Decoder(
 
 );
 
-    // TODO: something to be done?
+    // 用来表示这个信息现在能不能发送
+    assign instr_issued = instr_ready && !rob_full && !rs_full && !lsb_full;
 
     assign instr_out = instr_in;
     assign instr_addr_out = instr_addr_in;
@@ -64,12 +65,10 @@ module Decoder(
     assign reg_id1 = instr_in[19:15];
     assign reg_id2 = instr_in[24:20];
     assign rd = instr_in[11:7];
-
     function [31:0] get_imm(input [31:0] inst, input [6:0] instr_type);
         case (instr_type)
             `LUI, `AUIPC: get_imm = {inst[31:12], 12'b0};
             `JAL: get_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
-            // TODO
             `JALR: get_imm = {{20{inst[31]}}, inst[31:20]};
             `B_TYPE: get_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
             `LD_TYPE, `I_TYPE: get_imm = {{20{inst[31]}}, inst[31:20]};
@@ -78,7 +77,6 @@ module Decoder(
             default: get_imm = 0;
         endcase
     endfunction
-
     assign imm = get_imm(instr_in, instr_type_out);
 
     predictor predictor_instance(
@@ -93,13 +91,14 @@ module Decoder(
     
     wire has_rs2, has_rd;
     assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
-    assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
     assign reg_value1_out = reg_value1_in;
-    assign reg_value2_out = reg_value2_in;
+    assign reg_value2_out = has_rs2 ? reg_value2_in : 0;
     assign has_dep1_out = has_dep1_in;
-    assign has_dep2_out = has_dep2_in;
+    assign has_dep2_out = has_rs2 ? has_dep2_in : 0;
     assign v_rob_id1_out = v_rob_id1_in;
-    assign v_rob_id2_out = v_rob_id2_in;
+    assign v_rob_id2_out = has_rs2 ? v_rob_id2_in : 0;
+
+    assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
     assign rd_rob_id_out = has_rd ? 0 : rd_rob_id_in;
 
 endmodule

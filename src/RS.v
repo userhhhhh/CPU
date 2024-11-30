@@ -50,6 +50,8 @@ module RS (
     
 );
 
+    reg [`RS_SIZE_WIDTH - 1 : 0] rs_size;
+
     reg busy [0 : `RS_SIZE - 1];
     reg [31 : 0] instr [0 : `RS_SIZE - 1];
     reg [31 : 0] instr_addr [0 : `RS_SIZE - 1];
@@ -70,39 +72,35 @@ module RS (
     wire has_exe_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
 
-    // TODO
-    // assign rs_full = (head == tail && busy[head]);
 
     // --------RS_chooser---------
-    wire merge_free[0 : (`RS_SIZE<<1)-1];
-    wire [`RS_SIZE_WIDTH - 1 : 0] merge_free_id [0 : (`RS_SIZE<<1)-1];
-    wire merge_exe [0 : (`RS_SIZE<<1)-1];
-    wire [`RS_SIZE_WIDTH - 1 : 0] merge_exe_id [0 : (`RS_SIZE<<1)-1];
-    assign merge_free[0] = merge_free[1];
-    assign merge_free_id[0] = merge_free_id[1];
-    assign merge_exe[0] = merge_exe[1];
-    assign merge_exe_id[0] = merge_exe_id[1];
+    wire free_tree[0 : (`RS_SIZE<<1)-1];
+    wire [`RS_SIZE_WIDTH - 1 : 0] free_tree_id [0 : (`RS_SIZE<<1)-1];
+    wire exe_tree [0 : (`RS_SIZE<<1)-1];
+    wire [`RS_SIZE_WIDTH - 1 : 0] exe_tree_id [0 : (`RS_SIZE<<1)-1];
+    assign free_tree[0] = free_tree[1];
+    assign free_tree_id[0] = free_tree_id[1];
+    assign exe_tree[0] = exe_tree[1];
+    assign exe_tree_id[0] = exe_tree_id[1];
     generate
         genvar gi;
-        for(gi = `RS_SIZE; gi < `RS_SIZE << 1; gi = gi + 1)
-        begin
-            assign merge_free[gi] = ~busy[gi-`RS_SIZE];
-            assign merge_free_id[gi] = gi-`RS_SIZE;
-            assign merge_exe[gi] = busy[gi-`RS_SIZE] && !has_dep1[gi-`RS_SIZE] && !has_dep2[gi-`RS_SIZE];
-            assign merge_exe_id[gi] = gi-`RS_SIZE;
+        for(gi = `RS_SIZE; gi < `RS_SIZE << 1; gi = gi + 1) begin
+            assign free_tree[gi] = ~busy[gi-`RS_SIZE];
+            assign free_tree_id[gi] = gi-`RS_SIZE;
+            assign exe_tree[gi] = busy[gi-`RS_SIZE] && !has_dep1[gi-`RS_SIZE] && !has_dep2[gi-`RS_SIZE];
+            assign exe_tree_id[gi] = gi-`RS_SIZE;
         end
-        for(gi = 1; gi < `RS_SIZE; gi = gi + 1)
-        begin
-            assign merge_free[gi] = merge_free[gi<<1] || merge_free[gi<<1|1];
-            assign merge_free_id[gi] = merge_free[gi<<1] ? merge_free_id[gi<<1] : merge_free_id[gi<<1|1];
-            assign merge_exe[gi] = merge_exe[gi<<1] || merge_exe[gi<<1|1];
-            assign merge_exe_id[gi] = merge_exe[gi<<1] ? merge_exe_id[gi<<1] : merge_exe_id[gi<<1|1];
+        for(gi = 1; gi < `RS_SIZE; gi = gi + 1) begin
+            assign free_tree[gi] = free_tree[gi<<1] || free_tree[gi<<1|1];
+            assign free_tree_id[gi] = free_tree[gi<<1] ? free_tree_id[gi<<1] : free_tree_id[gi<<1|1];
+            assign exe_tree[gi] = exe_tree[gi<<1] || exe_tree[gi<<1|1];
+            assign exe_tree_id[gi] = exe_tree[gi<<1] ? exe_tree_id[gi<<1] : exe_tree_id[gi<<1|1];
         end
     endgenerate
-    assign exe_rs_line = merge_exe_id[0];
-    assign free_rs_line = merge_free_id[0];
+    assign exe_rs_line = exe_tree_id[0];
+    assign free_rs_line = free_tree_id[0];
 
-    assign valid = merge_exe[0];
+    assign valid = exe_tree[0];
     assign op_out = op[exe_rs_line];
     assign alu_rob_id = rob_id[exe_rs_line];
     assign op_other = instr[exe_rs_line][30];
@@ -110,11 +108,20 @@ module RS (
     assign v1 = reg_value1[exe_rs_line];
     assign v2 = reg_value2[exe_rs_line];
     // --------RS_chooser---------
-    
+
+    wire fuck = exe_tree[0];
+
+    // 判断这条指令是否进入RS
+    wire judge_instr, accept_instr;
+    assign judge_instr = (instr_type_in == `I_TYPE || instr_type_in == `R_TYPE || instr_type_in == `B_TYPE);
+    assign accept_instr = instr_issued && !rs_full && judge_instr;
+
+    // assign rs_full = (rs_size == `RS_SIZE) || (rs_size + 1 == `RS_SIZE && instr_issued && !exe_tree[0]);
     
     integer i;
     always @(posedge clk) begin
         if(rst || rob_clear) begin
+            rs_size <= 0;
             for(i = 0; i < `RS_SIZE; i = i + 1) begin
                 busy[i] <= 1'b0;
                 instr[i] <= 32'b0;
@@ -134,8 +141,10 @@ module RS (
             // do nothing
         end
         else begin
+            // update rs_size
+            rs_size <= rs_size - exe_tree[0] + accept_instr;
             // add instr
-            if (instr_issued) begin
+            if (accept_instr) begin
                 busy[free_rs_line] <= 1;
                 instr[free_rs_line] <= instr_in;
                 instr_addr[free_rs_line] <= instr_addr_in;
