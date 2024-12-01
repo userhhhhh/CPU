@@ -79,7 +79,7 @@ module LSB (
     // 判断这条指令是否进入LSB
     wire judge_instr, accept_instr;
     assign judge_instr = (instr_type_in == `LD_TYPE || instr_type_in == `S_TYPE);
-    assign accept_instr = instr_issued && !lsb_full && judge_instr;
+    assign accept_instr = instr_issued && judge_instr;
     
     integer i;
     always @(posedge clk) begin
@@ -88,6 +88,11 @@ module LSB (
             tail <= 0;
             cache_exe <= 0;
             cache_exe_rob_id <= 0;
+            in_lsb_ready <= 0;
+            op_out <= 3'b0;
+            instr_type_out <= 7'b0;
+            data_addr_out <= 32'b0;
+            data_out <= 32'b0;
             for(i = 0; i < `RS_SIZE; i = i + 1) begin
                 busy[i] <= 1'b0;
                 instr[i] <= 32'b0;

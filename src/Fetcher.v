@@ -30,8 +30,21 @@ module Fetcher(
 
     wire [31 : 0] issue_pc;
     assign issue_pc = rob_clear ? predictor_pc : pc + 4;
+
+    // debug
+    wire start_fetch_wire = start_fetch;
+    wire fd_instr_ready = instr_ready;
     
+    always @* begin
+        $display("--------------fetcher----------------time=%0t", $time);
+        $display("time=%0t fc_start_fetch: %b", $time, start_fetch_wire);
+        $display("time=%0t pc: %d", $time, pc);
+        $display("time=%0t fd_instr_ready: %b", $time, fd_instr_ready);
+        $display("time=%0t cf_instr_ready_in: %b", $time, instr_ready_in);
+    end
+
     always @(posedge clk) begin
+        $display("time_f_start=%0t", $time);
         if(rst) begin
             start_fetch <= 1;
             pc <= 0;
@@ -43,19 +56,6 @@ module Fetcher(
             // do nothing
         end
         else begin
-            if(instr_ready_in) begin
-                start_fetch <= 0;
-                instr <= instr_in;
-                instr_addr <= pc;
-                instr_ready <= instr_ready_in;
-            end
-            if(instr_issued) begin
-                start_fetch <= 1;
-                pc <= issue_pc;
-                instr_ready <= 0;
-                instr <= 0;
-                instr_addr <= 0;
-            end
             if(rob_clear) begin
                 start_fetch <= 1;
                 pc <= back_pc;
@@ -63,7 +63,21 @@ module Fetcher(
                 instr <= 0;
                 instr_addr <= 0;
             end
+            else if(instr_ready_in) begin
+                start_fetch <= 0;
+                instr <= instr_in;
+                instr_addr <= pc;
+                instr_ready <= instr_ready_in;
+            end
+            else if(instr_issued) begin
+                start_fetch <= 1;
+                pc <= issue_pc;
+                instr_ready <= 0;
+                instr <= 0;
+                instr_addr <= 0;
+            end
         end
+        $display("time_f_end=%0t", $time);
     end
 
 

@@ -58,6 +58,17 @@ module Decoder(
     // 用来表示这个信息现在能不能发送
     assign instr_issued = instr_ready && !rob_full && !rs_full && !lsb_full;
 
+    always @* begin
+        $display("--------------decoder----------------time=%0t", $time);
+        $display("time=%0t rob_full: %b", $time, rob_full);
+        $display("time=%0t rs_full: %b", $time, rs_full);
+        $display("time=%0t lsb_full: %b", $time, lsb_full);
+        $display("time=%0t fd_instr_ready: %b", $time, instr_ready);
+        $display("time=%0t d_instr_issued: %b", $time, instr_issued);
+    end
+    assign instr_issued = 1;
+    assign instr_issued = !rob_full && !rs_full && !lsb_full;
+
     assign instr_out = instr_in;
     assign instr_addr_out = instr_addr_in;
     assign op_out = instr_in[14:12];

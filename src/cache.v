@@ -60,8 +60,22 @@ module cache(
     
     assign out_lsb_ready = (cache_user == 2) && busy && (tobe_read == 0);
     assign instr_type_out = instr_type_in;
+
+    assign mem_wr = instr_type_in == `S_TYPE && ((busy && tobe_read && cache_user == 2)||(!busy && in_lsb_ready));
+    
+
+
+    always @* begin
+        $display("--------------cache----------------time=%0t", $time);
+        $display("time=%0t c_instr: %b", $time, instr_out);
+        $display("time=%0t cf_out_fetcher_ready: %b", $time, out_fetcher_ready);
+        $display("time=%0t fc_in_fetcher_ready: %d", $time, in_fetcher_ready);
+        $display("time=%0t mem_a: %b", $time, mem_a);
+        $display("time=%0t mem_din: %h", $time, mem_din);
+    end
     
     always @(posedge clk) begin
+        // $display("time_c_start=%0t", $time);
         if(rst || rob_clear) begin
             cache_user <= 2'b0;
             busy <= 1'b0;
@@ -126,6 +140,7 @@ module cache(
                 endcase
             end
         end
+        // $display("time_c_end=%0t", $time);
     end
 
     // mem_a 实时更新

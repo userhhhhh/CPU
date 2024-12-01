@@ -69,7 +69,6 @@ module RS (
 
     // 通过 RS_chooser 选择两个line
     wire [`RS_SIZE_WIDTH - 1 : 0] free_rs_line;
-    wire has_exe_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
 
 
@@ -109,14 +108,13 @@ module RS (
     assign v2 = reg_value2[exe_rs_line];
     // --------RS_chooser---------
 
-    wire fuck = exe_tree[0];
-
     // 判断这条指令是否进入RS
     wire judge_instr, accept_instr;
     assign judge_instr = (instr_type_in == `I_TYPE || instr_type_in == `R_TYPE || instr_type_in == `B_TYPE);
-    assign accept_instr = instr_issued && !rs_full && judge_instr;
+    assign accept_instr = instr_issued && judge_instr;
 
-    // assign rs_full = (rs_size == `RS_SIZE) || (rs_size + 1 == `RS_SIZE && instr_issued && !exe_tree[0]);
+    // assign rs_full = (rs_size == `RS_SIZE) || (rs_size + 1 == `RS_SIZE && !exe_tree[0]);
+    assign rs_full = 0;
     
     integer i;
     always @(posedge clk) begin
@@ -182,7 +180,7 @@ module RS (
                 end
             end
             // calculate
-            if(has_exe_rs_line) begin
+            if(exe_tree[0]) begin
                 busy[exe_rs_line] <= 0;
             end
         end
