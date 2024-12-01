@@ -16,31 +16,31 @@ module Decoder(
     input wire [31 : 0] instr_addr_in,
 
     // to fetcher
-    output wire [31 : 0] predict_pc,
+    output reg [31 : 0] predict_pc,
 
     // to RS and LSB and RoB
-    output wire instr_issued,// and to fetcher
+    output reg instr_issued,// and to fetcher
 
-    output wire [31 : 0] instr_out,
-    output wire [31 : 0] instr_addr_out,
-    output wire [2 : 0] op_out,
-    output wire [6 : 0] instr_type_out,
-    output wire [31 : 0] reg_value1_out,
-    output wire [31 : 0] reg_value2_out,
-    output wire has_dep1_out,
-    output wire has_dep2_out,
-    output wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1_out,
-    output wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2_out,
-    output wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_out,
+    output reg [31 : 0] instr_out,
+    output reg [31 : 0] instr_addr_out,
+    output reg [2 : 0] op_out,
+    output reg [6 : 0] instr_type_out,
+    output reg [31 : 0] reg_value1_out,
+    output reg [31 : 0] reg_value2_out,
+    output reg has_dep1_out,
+    output reg has_dep2_out,
+    output reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1_out,
+    output reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2_out,
+    output reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_out,
 
     // to RoB and LSB
-    output wire [31 : 0] imm,
+    output reg [31 : 0] imm,
     // to RoB
-    output wire [4 : 0] rd,
+    output reg [4 : 0] rd,
 
     // to Reg
-    output wire [4 : 0] reg_id1,
-    output wire [4 : 0] reg_id2,
+    output reg [4 : 0] reg_id1,
+    output reg [4 : 0] reg_id2,
 
     // from Reg
     input wire [31 : 0] reg_value1_in,
@@ -56,26 +56,12 @@ module Decoder(
 );
 
     // 用来表示这个信息现在能不能发送
-    assign instr_issued = instr_ready && !rob_full && !rs_full && !lsb_full;
+    wire need_work;
+    assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full;
+    wire has_rs2, has_rd;
+    assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
+    assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
 
-    always @* begin
-        $display("--------------decoder----------------time=%0t", $time);
-        $display("time=%0t rob_full: %b", $time, rob_full);
-        $display("time=%0t rs_full: %b", $time, rs_full);
-        $display("time=%0t lsb_full: %b", $time, lsb_full);
-        $display("time=%0t fd_instr_ready: %b", $time, instr_ready);
-        $display("time=%0t d_instr_issued: %b", $time, instr_issued);
-    end
-    assign instr_issued = 1;
-    assign instr_issued = !rob_full && !rs_full && !lsb_full;
-
-    assign instr_out = instr_in;
-    assign instr_addr_out = instr_addr_in;
-    assign op_out = instr_in[14:12];
-    assign instr_type_out = instr_in[6:0];
-    assign reg_id1 = instr_in[19:15];
-    assign reg_id2 = instr_in[24:20];
-    assign rd = instr_in[11:7];
     function [31:0] get_imm(input [31:0] inst, input [6:0] instr_type);
         case (instr_type)
             `LUI, `AUIPC: get_imm = {inst[31:12], 12'b0};
@@ -88,28 +74,76 @@ module Decoder(
             default: get_imm = 0;
         endcase
     endfunction
-    assign imm = get_imm(instr_in, instr_type_out);
-
-    predictor predictor_instance(
-        .clk(clk),
-        .rst(rst),
-        .rdy(rdy),
-        .pc(instr_addr_in),
-        .instr(instr_in),
-        .imm(imm),
-        .new_pc(predict_pc)
-    );
+    wire gen_imm = get_imm(instr_in, instr_type_out);
     
-    wire has_rs2, has_rd;
-    assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
-    assign reg_value1_out = reg_value1_in;
-    assign reg_value2_out = has_rs2 ? reg_value2_in : 0;
-    assign has_dep1_out = has_dep1_in;
-    assign has_dep2_out = has_rs2 ? has_dep2_in : 0;
-    assign v_rob_id1_out = v_rob_id1_in;
-    assign v_rob_id2_out = has_rs2 ? v_rob_id2_in : 0;
+    // predictor
+    function [31 : 0] gen_new_pc;
+        input [31 : 0] pc;
+        input [31 : 0] instr;
+        input [31 : 0] imm;
+        case (instr[6 : 0])
+            `JAL: gen_new_pc = pc + imm;
+            `JALR: gen_new_pc = pc + imm;// TODO
+            `B_TYPE: gen_new_pc = pc + imm;
+            default: gen_new_pc = pc + 4;
+        endcase
+    endfunction
+    wire new_pc = gen_new_pc(instr_addr_in, instr_in, gen_imm);
 
-    assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
-    assign rd_rob_id_out = has_rd ? 0 : rd_rob_id_in;
-
+    always @(posedge clk) begin
+        if (rst) begin
+            predict_pc <= 0;
+            instr_issued <= 0;
+            instr_out <= 0;
+            instr_addr_out <= 0;
+            op_out <= 0;
+            instr_type_out <= 0;
+            reg_value1_out <= 0;
+            reg_value2_out <= 0;
+            has_dep1_out <= 0;
+            has_dep2_out <= 0;
+            v_rob_id1_out <= 0;
+            v_rob_id2_out <= 0;
+            rd_rob_id_out <= 0;
+            imm <= 0;
+            reg_id1 <= 0;
+            reg_id2 <= 0;
+            rd <= 0;
+        end
+        else if(!rdy) begin
+            // do nothing
+        end
+        else if (!need_work) begin
+            // TODO: rob_clear
+        end
+        else begin
+            predict_pc <= new_pc;
+            instr_issued <= need_work;
+            instr_out <= instr_in;
+            instr_addr_out <= instr_addr_in;
+            op_out <= instr_in[14:12];
+            instr_type_out <= instr_in[6:0];
+            reg_id1 <= instr_in[19:15];
+            reg_id2 <= instr_in[24:20];
+            rd <= instr_in[11:7];
+            imm <= gen_imm;
+            reg_value1_out <= reg_value1_in;
+            reg_value2_out <= has_rs2 ? reg_value2_in : 0;
+            has_dep1_out <= has_dep1_in;
+            has_dep2_out <= has_rs2 ? has_dep2_in : 0;
+            v_rob_id1_out <= v_rob_id1_in;
+            v_rob_id2_out <= has_rs2 ? v_rob_id2_in : 0;
+            rd_rob_id_out <= has_rd ? 0 : rd_rob_id_in;
+        end
+    end
+    
+    // always @* begin
+    //     $display("--------------decoder----------------time=%0t", $time);
+    //     $display("time=%0t rob_full: %b", $time, rob_full);
+    //     $display("time=%0t rs_full: %b", $time, rs_full);
+    //     $display("time=%0t lsb_full: %b", $time, lsb_full);
+    //     $display("time=%0t fd_instr_ready: %b", $time, instr_ready);
+    //     $display("time=%0t d_instr_issued: %b", $time, instr_issued);
+    // end
+    
 endmodule

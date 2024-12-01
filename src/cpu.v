@@ -287,7 +287,6 @@ module cpu(
 
     // from Decoder
     .issue_signal(decoder_fetcher_instr_issued),
-    .instr_ready(fetcher_decoder_instr_ready),
     .instr(decoder_instr),
     .op(decoder_op),
     .instr_type(decoder_instr_type),

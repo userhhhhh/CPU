@@ -79,7 +79,7 @@ module LSB (
     // 判断这条指令是否进入LSB
     wire judge_instr, accept_instr;
     assign judge_instr = (instr_type_in == `LD_TYPE || instr_type_in == `S_TYPE);
-    assign accept_instr = instr_issued && judge_instr;
+    assign accept_instr = instr_issued && !lsb_full && judge_instr;
     
     integer i;
     always @(posedge clk) begin

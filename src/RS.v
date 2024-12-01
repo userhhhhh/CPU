@@ -113,8 +113,8 @@ module RS (
     assign judge_instr = (instr_type_in == `I_TYPE || instr_type_in == `R_TYPE || instr_type_in == `B_TYPE);
     assign accept_instr = instr_issued && judge_instr;
 
-    // assign rs_full = (rs_size == `RS_SIZE) || (rs_size + 1 == `RS_SIZE && !exe_tree[0]);
-    assign rs_full = 0;
+    // TODO
+    assign rs_full = (rs_size == `RS_SIZE) || (rs_size + 1 == `RS_SIZE && !exe_tree[0]);
     
     integer i;
     always @(posedge clk) begin

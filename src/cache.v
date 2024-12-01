@@ -63,16 +63,14 @@ module cache(
 
     assign mem_wr = instr_type_in == `S_TYPE && ((busy && tobe_read && cache_user == 2)||(!busy && in_lsb_ready));
     
-
-
-    always @* begin
-        $display("--------------cache----------------time=%0t", $time);
-        $display("time=%0t c_instr: %b", $time, instr_out);
-        $display("time=%0t cf_out_fetcher_ready: %b", $time, out_fetcher_ready);
-        $display("time=%0t fc_in_fetcher_ready: %d", $time, in_fetcher_ready);
-        $display("time=%0t mem_a: %b", $time, mem_a);
-        $display("time=%0t mem_din: %h", $time, mem_din);
-    end
+    // always @* begin
+    //     $display("--------------cache----------------time=%0t", $time);
+    //     $display("time=%0t c_instr: %b", $time, instr_out);
+    //     $display("time=%0t cf_out_fetcher_ready: %b", $time, out_fetcher_ready);
+    //     $display("time=%0t fc_in_fetcher_ready: %d", $time, in_fetcher_ready);
+    //     $display("time=%0t mem_a: %b", $time, mem_a);
+    //     $display("time=%0t mem_din: %h", $time, mem_din);
+    // end
     
     always @(posedge clk) begin
         // $display("time_c_start=%0t", $time);
