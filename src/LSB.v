@@ -134,12 +134,12 @@ module LSB (
                 op[tail] <= op_in;
                 instr_type[tail] <= instr_type_in;
                 imm[tail] <= imm_in;
-                reg_value1[tail] <= reg_value1_in;
-                reg_value2[tail] <= reg_value2_in;
-                has_dep1[tail] <= has_dep1_in;
-                has_dep2[tail] <= has_dep2_in;
-                v_rob_id1[tail] <= v_rob_id1_in;
-                v_rob_id2[tail] <= v_rob_id2_in;
+                reg_value1[tail] <= !has_dep1_in ? reg_value1_in : rs_ready && v_rob_id1_in == rs_rob_id ? rs_value : lsb_ready && v_rob_id1_in == lsb_rob_id ? lsb_value : 0;
+                reg_value2[tail] <= !has_dep2_in ? reg_value2_in : rs_ready && v_rob_id2_in == rs_rob_id ? rs_value : lsb_ready && v_rob_id2_in == lsb_rob_id ? lsb_value : 0;
+                has_dep1[tail] <= has_dep1_in && !(rs_ready && v_rob_id1_in == rs_rob_id) && !(lsb_ready && v_rob_id1_in == lsb_rob_id);
+                has_dep2[tail] <= has_dep2_in && !(rs_ready && v_rob_id2_in == rs_rob_id) && !(lsb_ready && v_rob_id2_in == lsb_rob_id);
+                v_rob_id1[tail] <= (has_dep1_in && !(rs_ready && v_rob_id1_in == rs_rob_id) && !(lsb_ready && v_rob_id1_in == lsb_rob_id)) ? v_rob_id1_in : 0;
+                v_rob_id2[tail] <= (has_dep2_in && !(rs_ready && v_rob_id2_in == rs_rob_id) && !(lsb_ready && v_rob_id2_in == lsb_rob_id)) ? v_rob_id2_in : 0;
                 rd_rob_id[tail] <= rd_rob_id_in;
             end
 
