@@ -52,11 +52,6 @@ module RoB (
 
 );
 
-    // predictor
-    assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
-    assign back_pc = clear ? instr_addr[head] + 32'h4 : 0;
-    assign head_rob_id = head;
-
     // 循环队列
     reg [`ROB_SIZE_WIDTH - 1 : 0] head, tail;
 
@@ -72,6 +67,12 @@ module RoB (
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
 
     integer i;
+    
+    // predictor
+    assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
+    assign back_pc = clear ? instr_addr[head] + 32'h4 : 0;
+    assign head_rob_id = head;
+
 
     // clear: 清空RoB
     always @(posedge clk) begin

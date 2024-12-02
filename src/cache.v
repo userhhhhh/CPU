@@ -50,8 +50,6 @@ module cache(
     reg [31:0] st_data; // to memory
     reg [31:0] ld_data; // from memory
 
-    reg [31:0] cur_addr;
-
     assign out_fetcher_ready = (cache_user == 1) && busy && (tobe_read == 0);
     assign instr_out = out_fetcher_ready ? {mem_din[7:0], ld_data[23:0]} : 0;
     assign instr_addr_out = out_fetcher_ready ? data_addr : 0;

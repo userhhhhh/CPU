@@ -37,18 +37,36 @@ module RS (
     // to RoB and LSB: data from ALU
     output wire rs_ready,
     output wire [`ROB_SIZE_WIDTH - 1 : 0] rs_rob_id,
-    output wire [31 : 0] rs_value,
+    output wire [31 : 0] rs_value
+
+);
 
     // to ALU
-    output wire [`ROB_SIZE_WIDTH - 1 : 0] alu_rob_id,
-    output wire valid,
-    output wire [2:0] op_out,
-    output wire [6:0] instr_type_out,
-    output wire op_other,
-    output wire [31 : 0] v1,
-    output wire [31 : 0] v2
+    wire [`ROB_SIZE_WIDTH - 1 : 0] alu_rob_id;
+    wire valid;
+    wire [2:0] op_out;
+    wire [6:0] instr_type_out;
+    wire op_other;
+    wire [31 : 0] v1;
+    wire [31 : 0] v2;
     
-);
+    ALU alu_instance (
+        .clk(clk_in),
+        .rst(rst_in),
+        .rdy(rdy_in),
+
+        .rob_id_in(alu_rob_id),
+        .valid(valid),
+        .op(op_out),
+        .instr_type_in(instr_type_out),
+        .op_other(op_other),
+        .v1(v1),
+        .v2(v2),
+
+        .rob_id_out(rs_rob_id),
+        .result(rs_value),
+        .ready(rs_ready)
+    );
 
     reg [`RS_SIZE_WIDTH - 1 : 0] rs_size;
 
@@ -64,8 +82,6 @@ module RS (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rob_id [0 : `RS_SIZE - 1];
-
-    reg ready [0 : `RS_SIZE - 1];
 
     // 通过 RS_chooser 选择两个line
     wire [`RS_SIZE_WIDTH - 1 : 0] free_rs_line;
@@ -185,5 +201,7 @@ module RS (
             end
         end
     end
+
+    
 
 endmodule

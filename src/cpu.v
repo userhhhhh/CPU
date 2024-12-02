@@ -377,15 +377,6 @@ module cpu(
     .data_out(lsb_cache_data)
   );
 
-  // RS and ALU: RS to ALU
-  wire [`ROB_SIZE_WIDTH - 1 : 0] rs_alu_rob_id;
-  wire rs_alu_valid;
-  wire [2:0] rs_alu_op;
-  wire [6:0] rs_alu_instr_type;
-  wire rs_alu_op_other;
-  wire [31 : 0] rs_alu_v1;
-  wire [31 : 0] rs_alu_v2;
-
   RS rs_instance (
     .clk(clk_in),
     .rst(rst_in),
@@ -419,34 +410,7 @@ module cpu(
     // to RoB and LSB: data from ALU
     .rs_ready(rs_rob_ready),
     .rs_rob_id(rs_rob_rob_id),
-    .rs_value(rs_rob_value),
-
-    // to ALU
-    .alu_rob_id(rs_alu_rob_id),
-    .valid(rs_alu_valid),
-    .op_out(rs_alu_op),
-    .instr_type_out(rs_alu_instr_type),
-    .op_other(rs_alu_op_other),
-    .v1(rs_alu_v1),
-    .v2(rs_alu_v2)
-  );
-
-  ALU alu_instance (
-    .clk(clk_in),
-    .rst(rst_in),
-    .rdy(rdy_in),
-
-    .rob_id_in(rs_alu_rob_id),
-    .valid(rs_alu_valid),
-    .op(rs_alu_op),
-    .instr_type_in(rs_alu_instr_type),
-    .op_other(rs_alu_op_other),
-    .v1(rs_alu_v1),
-    .v2(rs_alu_v2),
-
-    .rob_id_out(rs_rob_rob_id),
-    .result(rs_rob_value),
-    .ready(rs_rob_ready)
+    .rs_value(rs_rob_value)
   );
 
 always @(posedge clk_in)
