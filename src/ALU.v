@@ -49,7 +49,7 @@ module ALU(
                     3'b111: result <= v1 & v2; // and
                 endcase
             end
-            ready <= 1;
+            ready <= valid;
             rob_id_out <= rob_id_in;
         end
     end

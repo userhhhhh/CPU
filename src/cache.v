@@ -133,6 +133,9 @@ module cache(
                         already_read <= 3'b0;
                         tobe_read <= 3'b0;
                     end
+                    default: begin
+                        $fatal("cache wrong: tobe_read");
+                    end
                 endcase
             end
         end

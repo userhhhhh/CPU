@@ -202,6 +202,4 @@ module RS (
         end
     end
 
-    
-
 endmodule
