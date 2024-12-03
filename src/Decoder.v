@@ -62,6 +62,9 @@ module Decoder(
     assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
     assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
 
+    wire [6:0] d_instr_type_in;
+    assign d_instr_type_in = instr_in[6:0];
+
     function [31:0] get_imm(input [31:0] inst, input [6:0] instr_type);
         case (instr_type)
             `LUI, `AUIPC: get_imm = {inst[31:12], 12'b0};
@@ -74,7 +77,7 @@ module Decoder(
             default: get_imm = 0;
         endcase
     endfunction
-    wire gen_imm = get_imm(instr_in, instr_type_out);
+    wire [31:0] gen_imm = get_imm(instr_in, d_instr_type_in);
     
     // predictor
     function [31 : 0] gen_new_pc;
@@ -88,7 +91,7 @@ module Decoder(
             default: gen_new_pc = pc + 4;
         endcase
     endfunction
-    wire new_pc = gen_new_pc(instr_addr_in, instr_in, gen_imm);
+    wire [31:0] new_pc = gen_new_pc(instr_addr_in, instr_in, gen_imm);
 
     always @(posedge clk) begin
         if (rst) begin

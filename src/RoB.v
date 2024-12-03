@@ -189,7 +189,7 @@ module RoB (
     wire lsb_value_ready2 = lsb_ready && lsb_rob_id == get_rob_id2;
     wire ready_type = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
     wire decoder_value_ready = issue_signal && ready_type;
-    wire decoder_value = gen_decoder_value(instr_type, imm, instr_addr);
+    wire [31:0] decoder_value = gen_decoder_value(instr_type, imm, instr_addr);
     assign get_ready1 = prepared[get_rob_id1] || rs_value_ready1 || lsb_value_ready1 || (issue_signal && decoder_value_ready && get_rob_id1 == tail);
     assign get_ready2 = prepared[get_rob_id2] || rs_value_ready2 || lsb_value_ready2 || (issue_signal && decoder_value_ready && get_rob_id2 == tail);
     assign get_value1 = prepared[get_rob_id1] ? values[get_rob_id1] : rs_value_ready1 ? rs_value : lsb_value_ready1 ? lsb_value : decoder_value;

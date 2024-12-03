@@ -28,9 +28,6 @@ module Fetcher(
 
 );
 
-    wire [31 : 0] issue_pc;
-    assign issue_pc = rob_clear ? predictor_pc : pc + 4;
-
     // debug
     wire start_fetch_wire = start_fetch;
     wire fd_instr_ready = instr_ready;
@@ -66,12 +63,12 @@ module Fetcher(
             else if(instr_ready_in) begin
                 start_fetch <= 0;
                 instr <= instr_in;
-                instr_addr <= pc;
+                instr_addr <= instr_addr_in;
                 instr_ready <= instr_ready_in;
             end
             else if(instr_issued) begin
                 start_fetch <= 1;
-                pc <= issue_pc;
+                pc <= predictor_pc;
                 instr_ready <= 0;
                 instr <= 0;
                 instr_addr <= 0;
