@@ -73,6 +73,10 @@ module Fetcher(
                 instr <= 0;
                 instr_addr <= 0;
             end
+            // 错误：为保证issue_signal只存在一个周期，instr_ready也只存在一个周期
+            else if(instr_ready) begin
+                instr_ready <= 0;
+            end
         end
         // $display("time_f_end=%0t", $time);
     end

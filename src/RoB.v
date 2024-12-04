@@ -66,6 +66,25 @@ module RoB (
     reg [6:0] insts_type [0 : `ROB_SIZE - 1];
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
 
+    // debug
+    wire busy0 = busy[0];
+    wire busy1 = busy[1];
+    wire prepared0 = prepared[0];
+    wire prepared1 = prepared[1];
+    wire[4:0] rds0 = rds[0];
+    wire[4:0] rds1 = rds[1];
+    wire[31:0] values0 = values[0];
+    wire[31:0] values1 = values[1];
+    wire[2:0] ops0 = ops[0];
+    wire[2:0] ops1 = ops[1];
+    wire[31:0] insts0 = insts[0];
+    wire[31:0] insts1 = insts[1];
+    wire[6:0] insts_type0 = insts_type[0];
+    wire[6:0] insts_type1 = insts_type[1];
+    wire[31:0] insts_addr0 = insts_addr[0];
+    wire[31:0] insts_addr1 = insts_addr[1];
+    
+
     integer i;
     
     // predictor
@@ -104,7 +123,7 @@ module RoB (
     // issue: 接受从Decoder传来的指令
     always @(posedge clk) begin
         if(rst || (clear && rdy) || !rdy) begin
-             // do nothing
+            // do nothing
         end 
         else begin
             if(issue_signal) begin
@@ -178,7 +197,7 @@ module RoB (
 
     wire tail_change_reg, update_tail;
     assign tail_change_reg = !(instr_type == `B_TYPE || instr_type == `S_TYPE); // 表示RoB是否对reg进行了修改
-    assign update_tail = rdy && tail_change_reg;// TODO: instr_valid
+    assign update_tail = rdy && tail_change_reg && issue_signal;
     assign issue_rob_id = update_tail ? tail : 0;
     assign issue_rd = update_tail ? rd : 0;
 

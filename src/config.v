@@ -1,9 +1,12 @@
 
-`define ROB_SIZE_WIDTH 5
+`define ROB_SIZE_WIDTH 1
 `define ROB_SIZE (1<<`ROB_SIZE_WIDTH) 
 
-`define RS_SIZE_WIDTH 4
+`define RS_SIZE_WIDTH 1
 `define RS_SIZE (1<<`RS_SIZE_WIDTH)
+
+`define LSB_SIZE_WIDTH 1
+`define LSB_SIZE (1<<`LSB_SIZE_WIDTH)
 
 `define LUI 7'b0110111
 `define AUIPC 7'b0010111

@@ -97,11 +97,11 @@ module Reg (
             // do nothing
         end
         else begin
-            if(issue_rob_id != 0) begin
+            if(issue_rd != 0) begin
                 has_dep[issue_rd] <= 1;
                 dep_rob_id[issue_rd] <= ask_rob_id1;
             end
-            if(commit_rob_id != 0) begin
+            if(commit_rd != 0) begin
                 regs[commit_rd] <= commit_value;
                 if(has_dep[commit_rd] && dep_rob_id[commit_rd] == commit_rob_id) begin
                     has_dep[commit_rd] <= 0;

@@ -117,6 +117,7 @@ module Decoder(
             // do nothing
         end
         else if (!need_work) begin
+            instr_issued <= need_work;
             // TODO: rob_clear
         end
         else begin
@@ -131,12 +132,12 @@ module Decoder(
             rd <= instr_in[11:7];
             imm <= gen_imm;
             reg_value1_out <= reg_value1_in;
-            reg_value2_out <= has_rs2 ? reg_value2_in : 0;
+            reg_value2_out <= has_rs2 ? reg_value2_in : gen_imm;
             has_dep1_out <= has_dep1_in;
             has_dep2_out <= has_rs2 ? has_dep2_in : 0;
             v_rob_id1_out <= v_rob_id1_in;
             v_rob_id2_out <= has_rs2 ? v_rob_id2_in : 0;
-            rd_rob_id_out <= has_rd ? 0 : rd_rob_id_in;
+            rd_rob_id_out <= has_rd ? rd_rob_id_in : 0;
         end
     end
     
