@@ -66,25 +66,6 @@ module RoB (
     reg [6:0] insts_type [0 : `ROB_SIZE - 1];
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
 
-    // debug
-    wire busy0 = busy[0];
-    wire busy1 = busy[1];
-    wire prepared0 = prepared[0];
-    wire prepared1 = prepared[1];
-    wire[4:0] rds0 = rds[0];
-    wire[4:0] rds1 = rds[1];
-    wire[31:0] values0 = values[0];
-    wire[31:0] values1 = values[1];
-    wire[2:0] ops0 = ops[0];
-    wire[2:0] ops1 = ops[1];
-    wire[31:0] insts0 = insts[0];
-    wire[31:0] insts1 = insts[1];
-    wire[6:0] insts_type0 = insts_type[0];
-    wire[6:0] insts_type1 = insts_type[1];
-    wire[31:0] insts_addr0 = insts_addr[0];
-    wire[31:0] insts_addr1 = insts_addr[1];
-    
-
     integer i;
     
     // predictor
@@ -227,5 +208,23 @@ module RoB (
             endcase
         end
     endfunction
+    
+    // debug
+    wire busy0 = busy[0];
+    wire busy1 = busy[1];
+    wire prepared0 = prepared[0];
+    wire prepared1 = prepared[1];
+    wire[4:0] rds0 = rds[0];
+    wire[4:0] rds1 = rds[1];
+    wire[31:0] values0 = values[0];
+    wire[31:0] values1 = values[1];
+    wire[2:0] ops0 = ops[0];
+    wire[2:0] ops1 = ops[1];
+    wire[31:0] insts0 = insts[0];
+    wire[31:0] insts1 = insts[1];
+    wire[6:0] insts_type0 = insts_type[0];
+    wire[6:0] insts_type1 = insts_type[1];
+    wire[31:0] insts_addr0 = insts_addr[0];
+    wire[31:0] insts_addr1 = insts_addr[1];
 
 endmodule

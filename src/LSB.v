@@ -52,23 +52,51 @@ module LSB (
 
 );
 
-    reg [`ROB_SIZE_WIDTH - 1 : 0] head, tail;
+    reg [`LSB_SIZE_WIDTH - 1 : 0] head, tail;
     reg cache_exe;
     reg [`ROB_SIZE_WIDTH - 1 : 0] cache_exe_rob_id;
 
-    reg busy [0 : `RS_SIZE - 1];
-    reg [31 : 0] instr [0 : `RS_SIZE - 1];
-    reg [31 : 0] instr_addr [0 : `RS_SIZE - 1];
-    reg [2 : 0] op [0 : `RS_SIZE - 1];
-    reg [6 : 0] instr_type [0 : `RS_SIZE - 1];
-    reg [31 : 0] imm [0 : `RS_SIZE - 1];
-    reg [31 : 0] reg_value1 [0 : `RS_SIZE - 1];
-    reg [31 : 0] reg_value2 [0 : `RS_SIZE - 1];
-    reg has_dep1 [0 : `RS_SIZE - 1];
-    reg has_dep2 [0 : `RS_SIZE - 1];
-    reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1 [0 : `RS_SIZE - 1];
-    reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `RS_SIZE - 1];
-    reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `RS_SIZE - 1];
+    reg busy [0 : `LSB_SIZE - 1];
+    reg [31 : 0] instr [0 : `LSB_SIZE - 1];
+    reg [31 : 0] instr_addr [0 : `LSB_SIZE - 1];
+    reg [2 : 0] op [0 : `LSB_SIZE - 1];
+    reg [6 : 0] instr_type [0 : `LSB_SIZE - 1];
+    reg [31 : 0] imm [0 : `LSB_SIZE - 1];
+    reg [31 : 0] reg_value1 [0 : `LSB_SIZE - 1];
+    reg [31 : 0] reg_value2 [0 : `LSB_SIZE - 1];
+    reg has_dep1 [0 : `LSB_SIZE - 1];
+    reg has_dep2 [0 : `LSB_SIZE - 1];
+    reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1 [0 : `LSB_SIZE - 1];
+    reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `LSB_SIZE - 1];
+    reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `LSB_SIZE - 1];
+
+    // debug
+    wire busy0 = busy[0];
+    wire busy1 = busy[1];
+    wire [31:0] instr0 = instr[0];
+    wire [31:0] instr1 = instr[1];
+    wire [31:0] instr_addr0 = instr_addr[0];
+    wire [31:0] instr_addr1 = instr_addr[1];
+    wire [2:0] op0 = op[0];
+    wire [2:0] op1 = op[1];
+    wire [6:0] instr_type0 = instr_type[0];
+    wire [6:0] instr_type1 = instr_type[1];
+    wire [31:0] imm0 = imm[0];
+    wire [31:0] imm1 = imm[1];
+    wire [31:0] reg_value10 = reg_value1[0];
+    wire [31:0] reg_value11 = reg_value1[1];
+    wire [31:0] reg_value20 = reg_value2[0];
+    wire [31:0] reg_value21 = reg_value2[1];
+    wire has_dep10 = has_dep1[0];
+    wire has_dep11 = has_dep1[1];
+    wire has_dep20 = has_dep2[0];
+    wire has_dep21 = has_dep2[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id10 = v_rob_id1[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id11 = v_rob_id1[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id20 = v_rob_id2[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id21 = v_rob_id2[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id0 = rd_rob_id[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id1 = rd_rob_id[1];
 
     assign lsb_full = (head == tail && busy[head]);
 
@@ -93,7 +121,7 @@ module LSB (
             instr_type_out <= 7'b0;
             data_addr_out <= 32'b0;
             data_out <= 32'b0;
-            for(i = 0; i < `RS_SIZE; i = i + 1) begin
+            for(i = 0; i < `LSB_SIZE; i = i + 1) begin
                 busy[i] <= 1'b0;
                 instr[i] <= 32'b0;
                 instr_addr[i] <= 32'b0;
@@ -109,9 +137,6 @@ module LSB (
                 rd_rob_id[i] <= {`ROB_SIZE_WIDTH{1'b0}};
             end
         end
-        else if (head_rob_id != head) begin
-            // do nothing
-        end
         else if (!rdy) begin
             // do nothing
         end
@@ -126,8 +151,6 @@ module LSB (
             // add instr
             if (accept_instr) begin
                 tail <= tail + 1;
-                cache_exe <= 0;
-                cache_exe_rob_id <= 0;
                 busy[tail] <= 1;
                 instr[tail] <= instr_in;
                 instr_addr[tail] <= instr_addr_in;
@@ -144,31 +167,33 @@ module LSB (
             end
 
             // listen broadcast
-            for(i = 0; i < `RS_SIZE; i = i + 1) begin
-                if(lsb_ready) begin
-                    if(v_rob_id1[i] == lsb_rob_id) begin
-                        reg_value1[i] <= lsb_value;
-                        has_dep1[i] <= 0;
+            for(i = 0; i < `LSB_SIZE; i = i + 1) begin
+                if(busy[i]) begin
+                    if(lsb_ready) begin
+                        if(v_rob_id1[i] == lsb_rob_id) begin
+                            reg_value1[i] <= lsb_value;
+                            has_dep1[i] <= 0;
+                        end
+                        if(v_rob_id2[i] == lsb_rob_id) begin
+                            reg_value2[i] <= lsb_value;
+                            has_dep2[i] <= 0;
+                        end
                     end
-                    if(v_rob_id2[i] == lsb_rob_id) begin
-                        reg_value2[i] <= lsb_value;
-                        has_dep2[i] <= 0;
-                    end
-                end
-                if(rs_ready) begin
-                    if(v_rob_id1[i] == rs_rob_id) begin
-                        reg_value1[i] <= rs_value;
-                        has_dep1[i] <= 0;
-                    end
-                    if(v_rob_id2[i] == rs_rob_id) begin
-                        reg_value2[i] <= rs_value;
-                        has_dep2[i] <= 0;
+                    if(rs_ready) begin
+                        if(v_rob_id1[i] == rs_rob_id) begin
+                            reg_value1[i] <= rs_value;
+                            has_dep1[i] <= 0;
+                        end
+                        if(v_rob_id2[i] == rs_rob_id) begin
+                            reg_value2[i] <= rs_value;
+                            has_dep2[i] <= 0;
+                        end
                     end
                 end
             end
 
             // send to cache
-            if(welcome_lsb && busy[head] && !has_dep1[head] && !has_dep2[head]) begin
+            if(welcome_lsb && busy[head] && !has_dep1[head] && !has_dep2[head] && !cache_exe) begin
                 if(instr_type[rd_rob_id[head]] == `LD_TYPE || head_rob_id == rd_rob_id[head]) begin
                     head <= head + 1;
                     cache_exe <= 1;
