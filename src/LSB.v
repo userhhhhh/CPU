@@ -44,7 +44,7 @@ module LSB (
     input wire [31:0] cache_data_out,
 
     // to cache
-    output reg in_lsb_ready,
+    output reg in_lsb_ready, // 表示这个指令是否已经commit
     output reg [2:0] op_out,
     output reg [6:0] instr_type_out,
     output reg [31:0] data_addr_out,
@@ -53,7 +53,6 @@ module LSB (
 );
 
     reg [`LSB_SIZE_WIDTH - 1 : 0] head, tail;
-    reg cache_exe;
     reg [`ROB_SIZE_WIDTH - 1 : 0] cache_exe_rob_id;
 
     reg busy [0 : `LSB_SIZE - 1];
@@ -114,7 +113,6 @@ module LSB (
         if(rst || rob_clear) begin
             head <= 0;
             tail <= 0;
-            cache_exe <= 0;
             cache_exe_rob_id <= 0;
             in_lsb_ready <= 0;
             op_out <= 3'b0;
@@ -143,9 +141,12 @@ module LSB (
         else begin
 
             // update
-            if(cache_exe && cache_ready) begin
-                cache_exe <= 0;
-                cache_exe_rob_id <= 0;
+            if(in_lsb_ready && cache_ready) begin
+                in_lsb_ready <= 0;
+                op_out <= 3'b0;
+                instr_type_out <= 7'b0;
+                data_addr_out <= 32'b0;
+                data_out <= 32'b0;
             end
 
             // add instr
@@ -193,16 +194,16 @@ module LSB (
             end
 
             // send to cache
-            if(welcome_lsb && busy[head] && !has_dep1[head] && !has_dep2[head] && !cache_exe) begin
-                if(instr_type[rd_rob_id[head]] == `LD_TYPE || head_rob_id == rd_rob_id[head]) begin
+            if(welcome_lsb && busy[head] && !has_dep1[head] && !has_dep2[head] && !in_lsb_ready) begin
+                if(instr_type[head] == `LD_TYPE || head_rob_id == rd_rob_id[head]) begin
                     head <= head + 1;
-                    cache_exe <= 1;
                     cache_exe_rob_id <= rd_rob_id[head];
                     in_lsb_ready <= 1;
                     op_out <= op[head];
                     instr_type_out <= instr_type[head];
                     data_addr_out <= reg_value1[head] + imm[head];
-                    data_out <= reg_value2[head];
+                    data_out <= instr_type[head] == `LD_TYPE ? 0 : reg_value2[head];
+                    busy[head] <= 0;
                 end
             end
 

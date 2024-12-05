@@ -31,7 +31,7 @@ module Decoder(
     output reg has_dep2_out,
     output reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1_out,
     output reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2_out,
-    output reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_out,
+    output reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_out, //这行指令对应的rob_id
 
     // to RoB and LSB
     output reg [31 : 0] imm,
@@ -39,8 +39,8 @@ module Decoder(
     output reg [4 : 0] rd,
 
     // to Reg
-    output reg [4 : 0] reg_id1,
-    output reg [4 : 0] reg_id2,
+    output wire [4 : 0] reg_id1,
+    output wire [4 : 0] reg_id2,
 
     // from Reg
     input wire [31 : 0] reg_value1_in,
@@ -59,11 +59,13 @@ module Decoder(
     wire need_work;
     assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full;
     wire has_rs2, has_rd;
-    assign has_rs2 = (instr_type_out == `R_TYPE || instr_type_out == `S_TYPE || instr_type_out == `B_TYPE);
-    assign has_rd = !(instr_type_out == `B_TYPE || instr_type_out == `S_TYPE);
-
     wire [6:0] d_instr_type_in;
     assign d_instr_type_in = instr_in[6:0];
+    assign has_rs2 = !(d_instr_type_in == `LUI || d_instr_type_in == `AUIPC || d_instr_type_in == `JAL || d_instr_type_in == `JALR || d_instr_type_in == `LD_TYPE || d_instr_type_in == `I_TYPE);
+    assign has_rd = !(d_instr_type_in == `B_TYPE || d_instr_type_in == `S_TYPE);
+
+    assign reg_id1 = instr_in[19:15];
+    assign reg_id2 = instr_in[24:20];
 
     function [31:0] get_imm(input [31:0] inst, input [6:0] instr_type);
         case (instr_type)
@@ -109,8 +111,6 @@ module Decoder(
             v_rob_id2_out <= 0;
             rd_rob_id_out <= 0;
             imm <= 0;
-            reg_id1 <= 0;
-            reg_id2 <= 0;
             rd <= 0;
         end
         else if(!rdy) begin
@@ -127,9 +127,7 @@ module Decoder(
             instr_addr_out <= instr_addr_in;
             op_out <= instr_in[14:12];
             instr_type_out <= instr_in[6:0];
-            reg_id1 <= instr_in[19:15];
-            reg_id2 <= instr_in[24:20];
-            rd <= instr_in[11:7];
+            rd <= has_rd ? instr_in[11:7] : 0;
             imm <= gen_imm;
             reg_value1_out <= reg_value1_in;
             reg_value2_out <= has_rs2 ? reg_value2_in : gen_imm;
@@ -137,7 +135,7 @@ module Decoder(
             has_dep2_out <= has_rs2 ? has_dep2_in : 0;
             v_rob_id1_out <= v_rob_id1_in;
             v_rob_id2_out <= has_rs2 ? v_rob_id2_in : 0;
-            rd_rob_id_out <= has_rd ? rd_rob_id_in : 0;
+            rd_rob_id_out <= rd_rob_id_in;
         end
     end
     

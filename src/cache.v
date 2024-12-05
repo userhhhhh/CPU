@@ -61,16 +61,7 @@ module cache(
     assign out_lsb_ready = (cache_user == 2) && busy && (tobe_read == 0);
     assign instr_type_out = instr_type_in;
 
-    assign mem_wr = instr_type_in == `S_TYPE && ((busy && tobe_read && cache_user == 2)||(!busy && in_lsb_ready));
-    
-    // always @* begin
-    //     $display("--------------cache----------------time=%0t", $time);
-    //     $display("time=%0t c_instr: %b", $time, instr_out);
-    //     $display("time=%0t cf_out_fetcher_ready: %b", $time, out_fetcher_ready);
-    //     $display("time=%0t fc_in_fetcher_ready: %d", $time, in_fetcher_ready);
-    //     $display("time=%0t mem_a: %b", $time, mem_a);
-    //     $display("time=%0t mem_din: %h", $time, mem_din);
-    // end
+    assign mem_wr =  (instr_type == `S_TYPE && busy && tobe_read && cache_user == 2)||(instr_type_in == `S_TYPE && !busy && in_lsb_ready);
     
     always @(posedge clk) begin
         // $display("time_c_start=%0t", $time);
@@ -93,17 +84,19 @@ module cache(
             if(in_lsb_ready) begin
                 busy <= 1'b1;
                 cache_user <= 2'b10;
-                len <= (3'b1<<$unsigned(op_in[1:0]))-1;
+                len <= (3'b1<<$unsigned(op_in[1:0]));
                 tobe_read <= (3'b1<<$unsigned(op_in[1:0]))-1;
-                already_read <= 3'b0;
+                already_read <= 3'b1;
                 op <= op_in;
                 instr_type <= instr_type_in;
                 data_addr <= data_addr_in;
+                st_data <= data_in;
+                ld_data <= 32'b0;
             end
             else if(in_fetcher_ready) begin // TODO
                 busy <= 1'b1;
                 cache_user <= 2'b01;
-                len <= 3'b011;
+                len <= 3'b100;
                 tobe_read <= 3'b011;
                 already_read <= 3'b1; //错误：开始就读了，初始值是1不是0
                 op <= 3'b0;
@@ -145,36 +138,45 @@ module cache(
 
     // mem_a 实时更新
     wire [31 : 0] busy_mem_a, free_mem_a;
-    assign busy_mem_a = busy ? ((already_read <= 3) ? data_addr + already_read : 0) : 0; //错误：最后一个要置0
-    assign free_mem_a = in_lsb_ready ? data_addr : instr_addr;
+    assign busy_mem_a = busy ? ((tobe_read >= 1) ? data_addr + already_read : 0) : 0; //错误：最后一个要置0
+    assign free_mem_a = in_lsb_ready ? data_addr_in : instr_addr; // 错误：这里是data_addr_in，不是data_addr
     assign mem_a = busy ? busy_mem_a : free_mem_a;
 
     function [7:0] gen_mem_dout;
         input [2:0] _already_read;
-        input [31:0] _ld_data;
+        input [31:0] _st_data;
         case (_already_read)
-            3'b000: gen_mem_dout = _ld_data[7:0];
-            3'b001: gen_mem_dout = _ld_data[15:8];
-            3'b010: gen_mem_dout = _ld_data[23:16];
-            3'b011: gen_mem_dout = _ld_data[31:24];
+            3'b001: gen_mem_dout = _st_data[15:8];
+            3'b010: gen_mem_dout = _st_data[23:16];
+            3'b011: gen_mem_dout = _st_data[31:24];
             default: gen_mem_dout = 0;
         endcase
     endfunction
-    assign mem_dout = tobe_read ? 0 : gen_mem_dout(already_read, ld_data);
+    assign mem_dout = busy == 0 ? data_in[7:0] : tobe_read == 0 ? 0 : gen_mem_dout(already_read, st_data);
 
     function [31:0] gen_read_data;
-        input [2:0] len;
-        input [31:0] tmp_data;
-        input [7:0] mem_din;
-        case (len)
-            3'b000: gen_read_data = {{24{mem_din[7]}}, mem_din}; // lb
-            3'b100: gen_read_data = {24'b0, mem_din}; // lbu
-            3'b001: gen_read_data = {{16{mem_din[7]}}, mem_din, tmp_data[7:0]}; // lh
-            3'b101: gen_read_data = {16'b0, mem_din, tmp_data[7:0]}; // lhu
-            3'b010: gen_read_data = {mem_din, tmp_data[23:0]}; // lw
+        input [2:0] _op;
+        input [31:0] _ld_data;
+        input [7:0] _mem_din;
+        case (_op)
+            3'b000: gen_read_data = {{24{_mem_din[7]}}, _mem_din}; // lb
+            3'b100: gen_read_data = {24'b0, _mem_din}; // lbu
+            3'b001: gen_read_data = {{16{_mem_din[7]}}, _mem_din, _ld_data[7:0]}; // lh
+            3'b101: gen_read_data = {16'b0, _mem_din, _ld_data[7:0]}; // lhu
+            3'b010: gen_read_data = {_mem_din, _ld_data[23:0]}; // lw
             default: gen_read_data = 0;
         endcase 
     endfunction
-    assign data_out = gen_read_data(len, ld_data, mem_din);
+    assign data_out = (out_lsb_ready && instr_type == `LD_TYPE) ? gen_read_data(op, ld_data, mem_din) : 0;
+    
+    
+    // always @* begin
+    //     $display("--------------cache----------------time=%0t", $time);
+    //     $display("time=%0t c_instr: %b", $time, instr_out);
+    //     $display("time=%0t cf_out_fetcher_ready: %b", $time, out_fetcher_ready);
+    //     $display("time=%0t fc_in_fetcher_ready: %d", $time, in_fetcher_ready);
+    //     $display("time=%0t mem_a: %b", $time, mem_a);
+    //     $display("time=%0t mem_din: %h", $time, mem_din);
+    // end
 
 endmodule
