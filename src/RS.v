@@ -202,24 +202,27 @@ module RS (
             end
             // listen broadcast
             for(i = 0; i < `RS_SIZE; i = i + 1) begin
-                if(lsb_ready) begin
-                    if(v_rob_id1[i] == lsb_rob_id) begin
-                        reg_value1[i] <= lsb_value;
-                        has_dep1[i] <= 0;
+                if(busy[i]) begin
+                    // 错误：这里判断要加上has_dep，不然就更新炸了
+                    if(lsb_ready) begin
+                        if(has_dep1[i] && v_rob_id1[i] == lsb_rob_id) begin
+                            reg_value1[i] <= lsb_value;
+                            has_dep1[i] <= 0;
+                        end
+                        if(has_dep2[i] && v_rob_id2[i] == lsb_rob_id) begin
+                            reg_value2[i] <= lsb_value;
+                            has_dep2[i] <= 0;
+                        end
                     end
-                    if(v_rob_id2[i] == lsb_rob_id) begin
-                        reg_value2[i] <= lsb_value;
-                        has_dep2[i] <= 0;
-                    end
-                end
-                if(rs_ready) begin
-                    if(v_rob_id1[i] == rs_rob_id) begin
-                        reg_value1[i] <= rs_value;
-                        has_dep1[i] <= 0;
-                    end
-                    if(v_rob_id2[i] == rs_rob_id) begin
-                        reg_value2[i] <= rs_value;
-                        has_dep2[i] <= 0;
+                    if(rs_ready) begin
+                        if(has_dep1[i] && v_rob_id1[i] == rs_rob_id) begin
+                            reg_value1[i] <= rs_value;
+                            has_dep1[i] <= 0;
+                        end
+                        if(has_dep2[i] && v_rob_id2[i] == rs_rob_id) begin
+                            reg_value2[i] <= rs_value;
+                            has_dep2[i] <= 0;
+                        end
                     end
                 end
             end
