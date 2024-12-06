@@ -70,7 +70,7 @@ module RoB (
     
     // predictor
     assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
-    assign back_pc = clear ? instr_addr[head] + 32'h4 : 0;
+    assign back_pc = clear ? insts_addr[head] + 32'h4 : 0;
     assign head_rob_id = head;
 
 

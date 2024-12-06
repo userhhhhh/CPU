@@ -54,15 +54,19 @@ module Decoder(
     input wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_in
 
 );
-
-    // 用来表示这个信息现在能不能发送
-    wire need_work;
-    assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full;
-    wire has_rs2, has_rd;
+    // TODO: rob_clear
+    
     wire [6:0] d_instr_type_in;
     assign d_instr_type_in = instr_in[6:0];
+    wire jalr_not_ready = d_instr_type_in == `JALR && has_dep1_in;
+    // 用来表示这个信息现在能不能发送
+    wire need_work;
+    assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full && !jalr_not_ready;
+    wire has_rs2, has_rd;
+    
     assign has_rs2 = !(d_instr_type_in == `LUI || d_instr_type_in == `AUIPC || d_instr_type_in == `JAL || d_instr_type_in == `JALR || d_instr_type_in == `LD_TYPE || d_instr_type_in == `I_TYPE);
     assign has_rd = !(d_instr_type_in == `B_TYPE || d_instr_type_in == `S_TYPE);
+    
 
     assign reg_id1 = instr_in[19:15];
     assign reg_id2 = instr_in[24:20];
@@ -83,17 +87,18 @@ module Decoder(
     
     // predictor
     function [31 : 0] gen_new_pc;
-        input [31 : 0] pc;
-        input [31 : 0] instr;
-        input [31 : 0] imm;
-        case (instr[6 : 0])
-            `JAL: gen_new_pc = pc + imm;
-            `JALR: gen_new_pc = pc + imm;// TODO
-            `B_TYPE: gen_new_pc = pc + imm;
-            default: gen_new_pc = pc + 4;
+        input [31 : 0] _pc;
+        input [31 : 0] _instr;
+        input [31 : 0] _imm;
+        input [31 : 0] _reg_value1_in;
+        case (_instr[6 : 0])
+            `JAL: gen_new_pc = _pc + _imm;
+            `JALR: gen_new_pc = _reg_value1_in + _imm;
+            `B_TYPE: gen_new_pc = _pc + _imm;
+            default: gen_new_pc = _pc + 4;
         endcase
     endfunction
-    wire [31:0] new_pc = gen_new_pc(instr_addr_in, instr_in, gen_imm);
+    wire [31:0] new_pc = gen_new_pc(instr_addr_in, instr_in, gen_imm, reg_value1_in);
 
     always @(posedge clk) begin
         if (rst) begin
