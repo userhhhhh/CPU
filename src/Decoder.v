@@ -55,7 +55,6 @@ module Decoder(
     input wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_in
 
 );
-    // TODO: rob_clear
     
     wire [6:0] d_instr_type_in;
     assign d_instr_type_in = instr_in[6:0];
@@ -137,7 +136,6 @@ module Decoder(
         end
         else if (!need_work) begin
             instr_issued <= need_work;
-            // TODO: rob_clear
         end
         else begin
             predict_pc <= new_pc;

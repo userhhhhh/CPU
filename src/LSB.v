@@ -179,6 +179,18 @@ module LSB (
                     data_addr_out <= reg_value1[head] + imm[head];
                     data_out <= instr_type[head] == `LD_TYPE ? 0 : reg_value2[head];
                     busy[head] <= 0;
+                    // debug
+                    instr[head] <= 32'b0;
+                    instr_addr[head] <= 32'b0;
+                    op[head] <= 3'b0;
+                    instr_type[head] <= 7'b0;
+                    imm[head] <= 32'b0;
+                    reg_value1[head] <= 32'b0;
+                    reg_value2[head] <= 32'b0;
+                    has_dep1[head] <= 1'b0;
+                    has_dep2[head] <= 1'b0;
+                    v_rob_id1[head] <= {`ROB_SIZE_WIDTH{1'b0}};
+                    v_rob_id2[head] <= {`ROB_SIZE_WIDTH{1'b0}};
                 end
             end
         end
