@@ -33,14 +33,6 @@ module Fetcher(
     wire start_fetch_wire = start_fetch;
     wire fd_instr_ready = instr_ready;
     
-    // always @* begin
-    //     $display("--------------fetcher----------------time=%0t", $time);
-    //     $display("time=%0t fc_start_fetch: %b", $time, start_fetch_wire);
-    //     $display("time=%0t pc: %d", $time, pc);
-    //     $display("time=%0t fd_instr_ready: %b", $time, fd_instr_ready);
-    //     $display("time=%0t cf_instr_ready_in: %b", $time, instr_ready_in);
-    // end
-
     always @(posedge clk) begin
         // $display("time_f_start=%0t", $time);
         if(rst) begin
@@ -84,6 +76,13 @@ module Fetcher(
         end
         // $display("time_f_end=%0t", $time);
     end
-
+    
+    // always @* begin
+    //     $display("--------------fetcher----------------time=%0t", $time);
+    //     $display("time=%0t fc_start_fetch: %b", $time, start_fetch_wire);
+    //     $display("time=%0t pc: %d", $time, pc);
+    //     $display("time=%0t fd_instr_ready: %b", $time, fd_instr_ready);
+    //     $display("time=%0t cf_instr_ready_in: %b", $time, instr_ready_in);
+    // end
 
 endmodule

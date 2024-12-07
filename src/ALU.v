@@ -6,6 +6,7 @@ module ALU(
     input wire rst,
     input wire rdy,
 
+    input wire rob_clear,
     input wire [`ROB_SIZE_WIDTH - 1 : 0] rob_id_in,
     input wire valid,
     input wire [2:0] op,
@@ -20,7 +21,7 @@ module ALU(
 );
 
     always @(posedge clk) begin
-        if (rst) begin
+        if (rst || rob_clear) begin
             rob_id_out <= 0;
             result <= 0;
             ready <= 0;

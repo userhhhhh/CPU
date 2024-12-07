@@ -55,6 +55,7 @@ module RS (
         .rst(rst),
         .rdy(rdy),
 
+        .rob_clear(rob_clear),
         .rob_id_in(alu_rob_id),
         .valid(valid),
         .op(op_out),

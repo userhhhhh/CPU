@@ -177,5 +177,4 @@ module Reg (
     wire t5_dep_rob_id = dep_rob_id[30];
     wire t6_dep_rob_id = dep_rob_id[31];
 
-
 endmodule
