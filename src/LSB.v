@@ -69,39 +69,11 @@ module LSB (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `LSB_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `LSB_SIZE - 1];
 
-    // debug
-    wire busy0 = busy[0];
-    wire busy1 = busy[1];
-    wire [31:0] instr0 = instr[0];
-    wire [31:0] instr1 = instr[1];
-    wire [31:0] instr_addr0 = instr_addr[0];
-    wire [31:0] instr_addr1 = instr_addr[1];
-    wire [2:0] op0 = op[0];
-    wire [2:0] op1 = op[1];
-    wire [6:0] instr_type0 = instr_type[0];
-    wire [6:0] instr_type1 = instr_type[1];
-    wire [31:0] imm0 = imm[0];
-    wire [31:0] imm1 = imm[1];
-    wire [31:0] reg_value10 = reg_value1[0];
-    wire [31:0] reg_value11 = reg_value1[1];
-    wire [31:0] reg_value20 = reg_value2[0];
-    wire [31:0] reg_value21 = reg_value2[1];
-    wire has_dep10 = has_dep1[0];
-    wire has_dep11 = has_dep1[1];
-    wire has_dep20 = has_dep2[0];
-    wire has_dep21 = has_dep2[1];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id10 = v_rob_id1[0];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id11 = v_rob_id1[1];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id20 = v_rob_id2[0];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id21 = v_rob_id2[1];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id0 = rd_rob_id[0];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id1 = rd_rob_id[1];
-
     assign lsb_full = (head == tail && busy[head]);
 
     assign lsb_ready = cache_ready;
     assign lsb_rob_id = cache_exe_rob_id;
-    assign lsb_value = instr_type_out == `LD_TYPE ? cache_data_out : 0;
+    assign lsb_value = (instr_type_out == `LD_TYPE && cache_ready) ? cache_data_out : 0;
 
     // 判断这条指令是否进入LSB
     wire judge_instr, accept_instr;
@@ -206,8 +178,35 @@ module LSB (
                     busy[head] <= 0;
                 end
             end
-
         end
     end
+    
+    // debug
+    wire busy0 = busy[0];
+    wire busy1 = busy[1];
+    wire [31:0] instr0 = instr[0];
+    wire [31:0] instr1 = instr[1];
+    wire [31:0] instr_addr0 = instr_addr[0];
+    wire [31:0] instr_addr1 = instr_addr[1];
+    wire [2:0] op0 = op[0];
+    wire [2:0] op1 = op[1];
+    wire [6:0] instr_type0 = instr_type[0];
+    wire [6:0] instr_type1 = instr_type[1];
+    wire [31:0] imm0 = imm[0];
+    wire [31:0] imm1 = imm[1];
+    wire [31:0] reg_value10 = reg_value1[0];
+    wire [31:0] reg_value11 = reg_value1[1];
+    wire [31:0] reg_value20 = reg_value2[0];
+    wire [31:0] reg_value21 = reg_value2[1];
+    wire has_dep10 = has_dep1[0];
+    wire has_dep11 = has_dep1[1];
+    wire has_dep20 = has_dep2[0];
+    wire has_dep21 = has_dep2[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id10 = v_rob_id1[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id11 = v_rob_id1[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id20 = v_rob_id2[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id21 = v_rob_id2[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id0 = rd_rob_id[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id1 = rd_rob_id[1];
 
 endmodule

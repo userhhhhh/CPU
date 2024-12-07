@@ -31,7 +31,7 @@ module Decoder(
     output reg has_dep2_out,
     output reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id1_out,
     output reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2_out,
-    output reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_out, //这行指令对应的rob_id
+    output wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id_out, //这行指令对应的rob_id
 
     // to RoB and LSB
     output reg [31 : 0] imm,
@@ -59,20 +59,21 @@ module Decoder(
     wire [6:0] d_instr_type_in;
     assign d_instr_type_in = instr_in[6:0];
     wire jalr_not_ready = d_instr_type_in == `JALR && has_dep1_in;
+    
     // 用来表示这个信息现在能不能发送
     wire need_work;
     assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full && !jalr_not_ready;
     wire has_rs2, has_rd;
-    
     assign has_rs2 = !(d_instr_type_in == `LUI || d_instr_type_in == `AUIPC || d_instr_type_in == `JAL || d_instr_type_in == `JALR || d_instr_type_in == `LD_TYPE || d_instr_type_in == `I_TYPE);
     assign has_rd = !(d_instr_type_in == `B_TYPE || d_instr_type_in == `S_TYPE);
     
-
     assign reg_id1 = instr_in[19:15];
     assign reg_id2 = instr_in[24:20];
 
-    function [31:0] get_imm(input [31:0] inst, input [6:0] instr_type);
-        case (instr_type)
+    assign rd_rob_id_out = rd_rob_id_in;
+
+    function [31:0] get_imm(input [31:0] inst, input [6:0] _instr_type);
+        case (_instr_type)
             `LUI, `AUIPC: get_imm = {inst[31:12], 12'b0};
             `JAL: get_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
             `JALR: get_imm = {{20{inst[31]}}, inst[31:20]};
@@ -114,7 +115,7 @@ module Decoder(
             has_dep2_out <= 0;
             v_rob_id1_out <= 0;
             v_rob_id2_out <= 0;
-            rd_rob_id_out <= 0;
+            // rd_rob_id_out <= 0;
             imm <= 0;
             rd <= 0;
         end
@@ -140,7 +141,7 @@ module Decoder(
             has_dep2_out <= has_rs2 ? has_dep2_in : 0;
             v_rob_id1_out <= v_rob_id1_in;
             v_rob_id2_out <= has_rs2 ? v_rob_id2_in : 0;
-            rd_rob_id_out <= rd_rob_id_in;
+            // rd_rob_id_out <= rd_rob_id_in;
         end
     end
     

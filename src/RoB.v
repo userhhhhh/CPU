@@ -72,9 +72,11 @@ module RoB (
     assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
     assign back_pc = clear ? insts_addr[head] + 32'h4 : 0;
     assign head_rob_id = head;
+    
+    wire init_prepared = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
+    assign rob_full = (head == tail && busy[head]);
+    assign rd_rob_id = tail;
 
-
-    // clear: 清空RoB
     always @(posedge clk) begin
         if(rst || (clear && rdy)) begin
             head <= 0;
@@ -94,19 +96,7 @@ module RoB (
             // do nothing
         end
         else begin
-            // do nothing
-        end
-    end
-
-    wire init_prepared;
-    assign init_prepared = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
-
-    // issue: 接受从Decoder传来的指令
-    always @(posedge clk) begin
-        if(rst || (clear && rdy) || !rdy) begin
-            // do nothing
-        end 
-        else begin
+            // issue: 接受从Decoder传来的指令
             if(issue_signal) begin
                 tail <= tail + 1;
                 busy[tail] <= 1;
@@ -124,15 +114,7 @@ module RoB (
                     default: values[tail] <= 0;
                 endcase
             end
-        end
-    end
-
-    // receive: 听RS、LSB的广播
-    always @(posedge clk) begin
-        if(rst|| (clear && rdy) || !rdy) begin
-             // do nothing
-        end 
-        else begin
+            // receive: 听RS、LSB的广播
             if(rs_ready) begin
                 prepared[rs_rob_id] <= 1;
                 values[rs_rob_id] <= rs_value;
@@ -141,15 +123,7 @@ module RoB (
                 prepared[lsb_rob_id] <= 1;
                 values[lsb_rob_id] <= lsb_value;
             end
-        end
-    end
-
-    // commit: 向RS、LSB广播
-    always @(posedge clk) begin
-        if(rst|| (clear && rdy) || !rdy) begin
-             // do nothing
-        end 
-        else begin
+            // commit: 向RS、LSB广播
             if(busy[head] && prepared[head]) begin
                 head <= head + 1;
                 busy[head] <= 0;
@@ -163,9 +137,6 @@ module RoB (
             end
         end
     end
-
-    assign rob_full = (head == tail && busy[head]);
-    assign rd_rob_id = tail;
 
     // to reg: issue and commit
     // 这里一定要实时更新，不然会出现数据丢失

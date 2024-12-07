@@ -1,3 +1,5 @@
+// useless
+
 `include "config.v"
 module predictor(
     input wire clk,
@@ -17,7 +19,7 @@ module predictor(
         input [31 : 0] imm;
         case (instr[6 : 0])
             `JAL: gen_new_pc = pc + imm;
-            `JALR: gen_new_pc = pc + imm;// TODO
+            `JALR: gen_new_pc = pc + imm;
             `B_TYPE: gen_new_pc = pc + imm;
             default: gen_new_pc = pc + 4;
         endcase
