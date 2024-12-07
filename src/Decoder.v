@@ -59,13 +59,15 @@ module Decoder(
     
     wire [6:0] d_instr_type_in;
     assign d_instr_type_in = instr_in[6:0];
+    wire [2:0] d_op_in;
+    assign d_op_in = instr_in[14:12];
     wire jalr_not_ready = d_instr_type_in == `JALR && has_dep1_in;
     
     // 用来表示这个信息现在能不能发送
     wire need_work;
     assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full && !jalr_not_ready;
     assign updating_instr_issued = need_work;
-    
+
     wire has_rs2, has_rd;
     assign has_rs2 = !(d_instr_type_in == `LUI || d_instr_type_in == `AUIPC || d_instr_type_in == `JAL || d_instr_type_in == `JALR || d_instr_type_in == `LD_TYPE || d_instr_type_in == `I_TYPE);
     assign has_rd = !(d_instr_type_in == `B_TYPE || d_instr_type_in == `S_TYPE);
@@ -75,19 +77,27 @@ module Decoder(
 
     assign rd_rob_id_out = rd_rob_id_in;
 
-    function [31:0] get_imm(input [31:0] inst, input [6:0] _instr_type);
+    function [31:0] get_imm(input [31:0] inst, input [6:0] _instr_type, input [2:0] _op);
         case (_instr_type)
             `LUI, `AUIPC: get_imm = {inst[31:12], 12'b0};
             `JAL: get_imm = {{12{inst[31]}}, inst[19:12], inst[20], inst[30:21], 1'b0};
             `JALR: get_imm = {{20{inst[31]}}, inst[31:20]};
             `B_TYPE: get_imm = {{20{inst[31]}}, inst[7], inst[30:25], inst[11:8], 1'b0};
-            `LD_TYPE, `I_TYPE: get_imm = {{20{inst[31]}}, inst[31:20]};
+            `LD_TYPE: get_imm = {{20{inst[31]}}, inst[31:20]};
+            `I_TYPE: begin
+                if (_op != 3'b001 && _op != 3'b101) begin
+                    get_imm = {{20{inst[31]}}, inst[31:20]};
+                end
+                else begin
+                    get_imm = {{26{inst[25]}}, inst[25:20]};
+                end
+            end
             `S_TYPE: get_imm = {{20{inst[31]}}, inst[31:25], inst[11:7]};
             `R_TYPE: get_imm = 0;
             default: get_imm = 0;
         endcase
     endfunction
-    wire [31:0] gen_imm = get_imm(instr_in, d_instr_type_in);
+    wire [31:0] gen_imm = get_imm(instr_in, d_instr_type_in, d_op_in);
     
     // predictor
     function [31 : 0] gen_new_pc;

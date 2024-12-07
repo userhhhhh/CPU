@@ -117,7 +117,9 @@ module RS (
     assign valid = exe_tree[0];
     assign op_out = op[exe_rs_line];
     assign alu_rob_id = rob_id[exe_rs_line];
-    assign op_other = instr[exe_rs_line][30];
+    // 错误：要判断这条指令有没有op_other
+    wire has_op_other = instr_type[exe_rs_line]==`I_TYPE && op[exe_rs_line]==3'b101 || instr_type[exe_rs_line]==`R_TYPE && (op[exe_rs_line]==3'b101 || op[exe_rs_line]==3'b000);
+    assign op_other = has_op_other && instr[exe_rs_line][30];
     assign instr_type_out = instr_type[exe_rs_line];
     assign v1 = reg_value1[exe_rs_line];
     assign v2 = reg_value2[exe_rs_line];

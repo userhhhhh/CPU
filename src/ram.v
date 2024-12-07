@@ -13,6 +13,14 @@ module ram
   output wire  [ 7:0]           d_out     // data output
 );
 
+wire debug_clk_in = clk_in;
+wire debug_en_in = en_in;
+wire debug_r_nw_in = r_nw_in;
+wire [ADDR_WIDTH-1:0]debug_a_in = a_in;
+wire [7:0]debug_d_in = d_in;
+wire [7:0]debug_d_out = d_out;
+
+
 wire       ram_bram_we;
 wire [7:0] ram_bram_dout;
 
