@@ -38,8 +38,6 @@ module cache(
 
 );
 
-    // TODO: storing
-
     reg busy;
     reg [1:0] cache_user; // fetcher:1  LSB:2
     reg [2:0] already_read; //已读的字节数:0，1，2，3
@@ -51,6 +49,8 @@ module cache(
     reg [31:0] data_addr;
     reg [31:0] st_data; // to memory
     reg [31:0] ld_data; // from memory
+    
+    wire storing = busy && cache_user == 2 && instr_type == `S_TYPE && tobe_read;
 
     assign out_fetcher_ready = (cache_user == 1) && busy && (tobe_read == 0);
     assign instr_out = out_fetcher_ready ? {mem_din[7:0], ld_data[23:0]} : 0;
@@ -65,7 +65,7 @@ module cache(
     
     always @(posedge clk) begin
         // $display("time_c_start=%0t", $time);
-        if(rst || rob_clear || (!busy && !in_fetcher_ready && !in_lsb_ready)) begin
+        if(rst || (rob_clear && !storing) || (!busy && !in_fetcher_ready && !in_lsb_ready)) begin
             cache_user <= 2'b0;
             busy <= 1'b0;
             already_read <= 3'b0;

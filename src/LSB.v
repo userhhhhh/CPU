@@ -69,7 +69,10 @@ module LSB (
     reg [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id2 [0 : `LSB_SIZE - 1];
     reg [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id [0 : `LSB_SIZE - 1];
 
-    assign lsb_full = (head == tail && busy[head]);
+    // assign lsb_full = (head == tail && busy[head]);
+
+    parameter [`LSB_SIZE_WIDTH-1:0]tmp = (`LSB_SIZE_WIDTH'b1<<`LSB_SIZE_WIDTH)-1;
+    assign lsb_full = (((tail + 1-head)&tmp) == 0) && busy[head];
 
     assign lsb_ready = cache_ready;
     assign lsb_rob_id = cache_exe_rob_id;
@@ -182,31 +185,31 @@ module LSB (
     end
     
     // debug
-    wire busy0 = busy[0];
-    wire busy1 = busy[1];
-    wire [31:0] instr0 = instr[0];
-    wire [31:0] instr1 = instr[1];
-    wire [31:0] instr_addr0 = instr_addr[0];
-    wire [31:0] instr_addr1 = instr_addr[1];
-    wire [2:0] op0 = op[0];
-    wire [2:0] op1 = op[1];
-    wire [6:0] instr_type0 = instr_type[0];
-    wire [6:0] instr_type1 = instr_type[1];
-    wire [31:0] imm0 = imm[0];
-    wire [31:0] imm1 = imm[1];
-    wire [31:0] reg_value10 = reg_value1[0];
-    wire [31:0] reg_value11 = reg_value1[1];
-    wire [31:0] reg_value20 = reg_value2[0];
-    wire [31:0] reg_value21 = reg_value2[1];
-    wire has_dep10 = has_dep1[0];
-    wire has_dep11 = has_dep1[1];
-    wire has_dep20 = has_dep2[0];
-    wire has_dep21 = has_dep2[1];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id10 = v_rob_id1[0];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id11 = v_rob_id1[1];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id20 = v_rob_id2[0];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] v_rob_id21 = v_rob_id2[1];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id0 = rd_rob_id[0];
-    wire [`ROB_SIZE_WIDTH - 1 : 0] rd_rob_id1 = rd_rob_id[1];
+    wire debug_lsb_busy0 = busy[0];
+    wire debug_lsb_busy1 = busy[1];
+    wire [31:0] debug_lsb_instr0 = instr[0];
+    wire [31:0] debug_lsb_instr1 = instr[1];
+    wire [31:0] debug_lsb_instr_addr0 = instr_addr[0];
+    wire [31:0] debug_lsb_instr_addr1 = instr_addr[1];
+    wire [2:0] debug_lsb_op0 = op[0];
+    wire [2:0] debug_lsb_op1 = op[1];
+    wire [6:0] debug_lsb_instr_type0 = instr_type[0];
+    wire [6:0] debug_lsb_instr_type1 = instr_type[1];
+    wire [31:0] debug_lsb_imm0 = imm[0];
+    wire [31:0] debug_lsb_imm1 = imm[1];
+    wire [31:0] debug_lsb_reg_value10 = reg_value1[0];
+    wire [31:0] debug_lsb_reg_value11 = reg_value1[1];
+    wire [31:0] debug_lsb_reg_value20 = reg_value2[0];
+    wire [31:0] debug_lsb_reg_value21 = reg_value2[1];
+    wire debug_lsb_has_dep10 = has_dep1[0];
+    wire debug_lsb_has_dep11 = has_dep1[1];
+    wire debug_lsb_has_dep20 = has_dep2[0];
+    wire debug_lsb_has_dep21 = has_dep2[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] debug_lsb_v_rob_id10 = v_rob_id1[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] debug_lsb_v_rob_id11 = v_rob_id1[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] debug_lsb_v_rob_id20 = v_rob_id2[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] debug_lsb_v_rob_id21 = v_rob_id2[1];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] debug_lsb_rd_rob_id0 = rd_rob_id[0];
+    wire [`ROB_SIZE_WIDTH - 1 : 0] debug_lsb_rd_rob_id1 = rd_rob_id[1];
 
 endmodule

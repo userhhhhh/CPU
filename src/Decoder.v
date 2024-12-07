@@ -20,6 +20,7 @@ module Decoder(
 
     // to RS and LSB and RoB
     output reg instr_issued,// and to fetcher
+    output wire updating_instr_issued,
 
     output reg [31 : 0] instr_out,
     output reg [31 : 0] instr_addr_out,
@@ -63,6 +64,8 @@ module Decoder(
     // 用来表示这个信息现在能不能发送
     wire need_work;
     assign need_work = instr_ready && !rob_full && !rs_full && !lsb_full && !jalr_not_ready;
+    assign updating_instr_issued = need_work;
+    
     wire has_rs2, has_rd;
     assign has_rs2 = !(d_instr_type_in == `LUI || d_instr_type_in == `AUIPC || d_instr_type_in == `JAL || d_instr_type_in == `JALR || d_instr_type_in == `LD_TYPE || d_instr_type_in == `I_TYPE);
     assign has_rd = !(d_instr_type_in == `B_TYPE || d_instr_type_in == `S_TYPE);

@@ -19,6 +19,7 @@ module Fetcher(
     input wire [31 : 0] instr_addr_in,
 
     // from Decoder
+    input wire updating_instr_issued,
     input wire instr_issued,
     input wire [31 : 0] predictor_pc,
     // to Decoder
@@ -66,17 +67,20 @@ module Fetcher(
                 instr_addr <= instr_addr_in;
                 instr_ready <= instr_ready_in;
             end
-            else if(instr_issued) begin
-                start_fetch <= 1;
-                pc <= predictor_pc;
+            else if(updating_instr_issued) begin
                 instr_ready <= 0;
                 instr <= 0;
                 instr_addr <= 0;
             end
-            // 错误：为保证issue_signal只存在一个周期，instr_ready也只存在一个周期
-            else if(instr_ready) begin
-                instr_ready <= 0;
+            // 错误：为保证issue_signal只存在一个周期，instr_ready也只存在一个周期（错误的）
+            // 错误：上面的修改是错的，因为如果堵在那里，instr_ready也应该为1，所以将issue_signal的通信改为瞬时
+            else if(instr_issued) begin
+                start_fetch <= 1;
+                pc <= predictor_pc;
             end
+            // else if(instr_ready) begin
+            //     instr_ready <= 0;
+            // end
         end
         // $display("time_f_end=%0t", $time);
     end

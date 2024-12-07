@@ -165,6 +165,8 @@ module cpu(
   wire fetcher_decoder_instr_ready;
   wire [31 : 0] fetcher_decoder_instr;
   wire [31 : 0] fetcher_decoder_instr_addr;
+  
+  wire updating_decoder_fetcher_instr_issued;
 
   Fetcher fetcher_instance (
     .clk(clk_in),
@@ -184,6 +186,7 @@ module cpu(
     .instr_addr_in(cache_fetcher_instr_addr),
 
     // from Decoder
+    .updating_instr_issued(updating_decoder_fetcher_instr_issued),
     .instr_issued(decoder_fetcher_instr_issued),
     .predictor_pc(decoder_fetcher_new_pc),
     // to Decoder
@@ -231,6 +234,8 @@ module cpu(
 
     // to RS and LSB and RoB
     .instr_issued(decoder_fetcher_instr_issued),
+    .updating_instr_issued(updating_decoder_fetcher_instr_issued),
+
     .instr_out(decoder_instr),
     .instr_addr_out(decoder_instr_addr),
     .op_out(decoder_op),

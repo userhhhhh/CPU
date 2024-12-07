@@ -67,6 +67,9 @@ module RoB (
     reg [31:0] insts_addr [0 : `ROB_SIZE - 1];
 
     integer i;
+
+    parameter [`ROB_SIZE_WIDTH-1:0]tmp = (`ROB_SIZE_WIDTH'b1<<`ROB_SIZE_WIDTH)-1;
+    assign rob_full = (((tail + 1-head)&tmp) == 0) && busy[head];
     
     // predictor
     assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
@@ -74,7 +77,7 @@ module RoB (
     assign head_rob_id = head;
     
     wire init_prepared = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
-    assign rob_full = (head == tail && busy[head]);
+    // assign rob_full = (head == tail && busy[head]);
     assign rd_rob_id = tail;
 
     always @(posedge clk) begin
@@ -181,21 +184,21 @@ module RoB (
     endfunction
     
     // debug
-    wire busy0 = busy[0];
-    wire busy1 = busy[1];
-    wire prepared0 = prepared[0];
-    wire prepared1 = prepared[1];
-    wire[4:0] rds0 = rds[0];
-    wire[4:0] rds1 = rds[1];
-    wire[31:0] values0 = values[0];
-    wire[31:0] values1 = values[1];
-    wire[2:0] ops0 = ops[0];
-    wire[2:0] ops1 = ops[1];
-    wire[31:0] insts0 = insts[0];
-    wire[31:0] insts1 = insts[1];
-    wire[6:0] insts_type0 = insts_type[0];
-    wire[6:0] insts_type1 = insts_type[1];
-    wire[31:0] insts_addr0 = insts_addr[0];
-    wire[31:0] insts_addr1 = insts_addr[1];
+    wire debug_rob_busy0 = busy[0];
+    wire debug_rob_busy1 = busy[1];
+    wire debug_rob_prepared0 = prepared[0];
+    wire debug_rob_prepared1 = prepared[1];
+    wire[4:0] debug_rob_rds0 = rds[0];
+    wire[4:0] debug_rob_rds1 = rds[1];
+    wire[31:0] debug_rob_values0 = values[0];
+    wire[31:0] debug_rob_values1 = values[1];
+    wire[2:0] debug_rob_ops0 = ops[0];
+    wire[2:0] debug_rob_ops1 = ops[1];
+    wire[31:0] debug_rob_insts0 = insts[0];
+    wire[31:0] debug_rob_insts1 = insts[1];
+    wire[6:0] debug_rob_insts_type0 = insts_type[0];
+    wire[6:0] debug_rob_insts_type1 = insts_type[1];
+    wire[31:0] debug_rob_insts_addr0 = insts_addr[0];
+    wire[31:0] debug_rob_insts_addr1 = insts_addr[1];
 
 endmodule
