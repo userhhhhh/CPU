@@ -30,6 +30,11 @@ module cpu(
 // - 0x30004 read: read clocks passed since cpu starts (in dword, 4 bytes)
 // - 0x30004 write: indicates program stop (will output '\0' through uart tx)
 
+  // judge i or c
+  wire is_i;
+  wire fetcher_idecoder_instr_ready = fetcher_decoder_instr_ready && is_i;
+  wire fetcher_cdecoder_instr_ready = fetcher_decoder_instr_ready && !is_i;
+
   // clear
   wire rob_clear;
   wire [31:0] back_pc;
@@ -59,6 +64,13 @@ module cpu(
   // Reg and decoder： Decoder ask Reg
   wire [4 : 0] get_reg_value1;
   wire [4 : 0] get_reg_value2;
+
+  wire [4 : 0] iget_reg_value1;
+  wire [4 : 0] iget_reg_value2;
+  wire [4 : 0] cget_reg_value1;
+  wire [4 : 0] cget_reg_value2;
+  assign get_reg_value1 = is_i ? iget_reg_value1 : cget_reg_value1;
+  assign get_reg_value2 = is_i ? iget_reg_value2 : cget_reg_value2;
 
   // Reg and decoder: Reg ans decoder
   wire [31 : 0] reg_decoder_value1;
@@ -161,12 +173,23 @@ module cpu(
   // decoder and fetcher: decoder to fetcher
   wire decoder_fetcher_instr_issued;
   wire [31 : 0] decoder_fetcher_new_pc;
+
+  wire idecoder_fetcher_instr_issued;
+  wire cdecoder_fetcher_instr_issued;
+  wire [31 : 0] idecoder_fetcher_new_pc;
+  wire [31 : 0] cdecoder_fetcher_new_pc;
+  assign decoder_fetcher_instr_issued = is_i ? idecoder_fetcher_instr_issued : cdecoder_fetcher_instr_issued;
+  assign decoder_fetcher_new_pc = is_i ? idecoder_fetcher_new_pc : cdecoder_fetcher_new_pc;
+
   // decoder and fetcher: fetcher to decoder
   wire fetcher_decoder_instr_ready;
   wire [31 : 0] fetcher_decoder_instr;
   wire [31 : 0] fetcher_decoder_instr_addr;
   
   wire updating_decoder_fetcher_instr_issued;
+  wire iupdating_decoder_fetcher_instr_issued;
+  wire cupdating_decoder_fetcher_instr_issued;
+  assign updating_decoder_fetcher_instr_issued = is_i ? iupdating_decoder_fetcher_instr_issued : cupdating_decoder_fetcher_instr_issued;
 
   Fetcher fetcher_instance (
     .clk(clk_in),
@@ -190,6 +213,7 @@ module cpu(
     .instr_issued(decoder_fetcher_instr_issued),
     .predictor_pc(decoder_fetcher_new_pc),
     // to Decoder
+    .is_i(is_i),
     .instr_ready(fetcher_decoder_instr_ready),
     .instr(fetcher_decoder_instr),
     .instr_addr(fetcher_decoder_instr_addr)
@@ -209,10 +233,51 @@ module cpu(
   wire [`ROB_SIZE_WIDTH - 1 : 0] decoder_rd_rob_id;
   wire [31 : 0] decoder_imm;
 
+  wire [31 : 0] idecoder_instr;
+  wire [31 : 0] idecoder_instr_addr;
+  wire [2 : 0] idecoder_op;
+  wire [6 : 0] idecoder_instr_type;
+  wire [31 : 0] idecoder_reg_value1;
+  wire [31 : 0] idecoder_reg_value2;
+  wire idecoder_has_dep1;
+  wire idecoder_has_dep2;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] idecoder_v_rob_id1;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] idecoder_v_rob_id2;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] idecoder_rd_rob_id;
+  wire [31 : 0] idecoder_imm;
+  wire [31 : 0] cdecoder_instr;
+  wire [31 : 0] cdecoder_instr_addr;
+  wire [2 : 0] cdecoder_op;
+  wire [6 : 0] cdecoder_instr_type;
+  wire [31 : 0] cdecoder_reg_value1;
+  wire [31 : 0] cdecoder_reg_value2;
+  wire cdecoder_has_dep1;
+  wire cdecoder_has_dep2;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] cdecoder_v_rob_id1;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] cdecoder_v_rob_id2;
+  wire [`ROB_SIZE_WIDTH - 1 : 0] cdecoder_rd_rob_id;
+  wire [31 : 0] cdecoder_imm;
+  assign decoder_instr = is_i ? idecoder_instr : cdecoder_instr;
+  assign decoder_instr_addr = is_i ? idecoder_instr_addr : cdecoder_instr_addr;
+  assign decoder_op = is_i ? idecoder_op : cdecoder_op;
+  assign decoder_instr_type = is_i ? idecoder_instr_type : cdecoder_instr_type;
+  assign decoder_reg_value1 = is_i ? idecoder_reg_value1 : cdecoder_reg_value1;
+  assign decoder_reg_value2 = is_i ? idecoder_reg_value2 : cdecoder_reg_value2;
+  assign decoder_has_dep1 = is_i ? idecoder_has_dep1 : cdecoder_has_dep1;
+  assign decoder_has_dep2 = is_i ? idecoder_has_dep2 : cdecoder_has_dep2;
+  assign decoder_v_rob_id1 = is_i ? idecoder_v_rob_id1 : cdecoder_v_rob_id1;
+  assign decoder_v_rob_id2 = is_i ? idecoder_v_rob_id2 : cdecoder_v_rob_id2;
+  assign decoder_rd_rob_id = is_i ? idecoder_rd_rob_id : cdecoder_rd_rob_id;
+  assign decoder_imm = is_i ? idecoder_imm : cdecoder_imm;
+
   // decoder and RoB: decoder to RoB rd
   wire [4 : 0] actual_rd;
   // decoder and RoB：rd_rob_id
   wire [`ROB_SIZE_WIDTH - 1 : 0] rob_decoder_rd_rob_id;
+
+  wire [4 : 0] iactual_rd;
+  wire [4 : 0] cactual_rd;
+  assign actual_rd = is_i ? iactual_rd : cactual_rd;
 
   Decoder decoder_instance (
     .clk(clk_in),
@@ -225,37 +290,92 @@ module cpu(
     .lsb_full(lsb_full),
 
     // from Fetcher
-    .instr_ready(fetcher_decoder_instr_ready),
+    .instr_ready(fetcher_idecoder_instr_ready),
     .instr_in(fetcher_decoder_instr),
     .instr_addr_in(fetcher_decoder_instr_addr),
 
     // to fetcher
-    .predict_pc(decoder_fetcher_new_pc),
+    .predict_pc(idecoder_fetcher_new_pc),
 
     // to RS and LSB and RoB
-    .instr_issued(decoder_fetcher_instr_issued),
-    .updating_instr_issued(updating_decoder_fetcher_instr_issued),
+    .instr_issued(idecoder_fetcher_instr_issued),
+    .updating_instr_issued(iupdating_decoder_fetcher_instr_issued),
 
-    .instr_out(decoder_instr),
-    .instr_addr_out(decoder_instr_addr),
-    .op_out(decoder_op),
-    .instr_type_out(decoder_instr_type),
-    .reg_value1_out(decoder_reg_value1),
-    .reg_value2_out(decoder_reg_value2),
-    .has_dep1_out(decoder_has_dep1),
-    .has_dep2_out(decoder_has_dep2),
-    .v_rob_id1_out(decoder_v_rob_id1),
-    .v_rob_id2_out(decoder_v_rob_id2),
-    .rd_rob_id_out(decoder_rd_rob_id),
+    .instr_out(idecoder_instr),
+    .instr_addr_out(idecoder_instr_addr),
+    .op_out(idecoder_op),
+    .instr_type_out(idecoder_instr_type),
+    .reg_value1_out(idecoder_reg_value1),
+    .reg_value2_out(idecoder_reg_value2),
+    .has_dep1_out(idecoder_has_dep1),
+    .has_dep2_out(idecoder_has_dep2),
+    .v_rob_id1_out(idecoder_v_rob_id1),
+    .v_rob_id2_out(idecoder_v_rob_id2),
+    .rd_rob_id_out(idecoder_rd_rob_id),
 
     // to RoB and LSB
-    .imm(decoder_imm),
+    .imm(idecoder_imm),
     // to RoB
-    .rd(actual_rd),
+    .rd(iactual_rd),
 
     // to Reg
-    .reg_id1(get_reg_value1),
-    .reg_id2(get_reg_value2),
+    .reg_id1(iget_reg_value1),
+    .reg_id2(iget_reg_value2),
+
+    // from Reg
+    .reg_value1_in(reg_decoder_value1),
+    .reg_value2_in(reg_decoder_value2),
+    .has_dep1_in(reg_has_dep1),
+    .has_dep2_in(reg_has_dep2),
+    .v_rob_id1_in(reg_dep_rob_id1),
+    .v_rob_id2_in(reg_dep_rob_id2),
+
+    // from RoB
+    .rd_rob_id_in(rob_decoder_rd_rob_id)
+  );
+
+  C_Decoder c_decoder_instance (
+    .clk(clk_in),
+    .rst(rst_in),
+    .rdy(rdy_in),
+
+    // judge full
+    .rob_full(rob_full),
+    .rs_full(rs_full),
+    .lsb_full(lsb_full),
+
+    // from Fetcher
+    .instr_ready(fetcher_cdecoder_instr_ready),
+    .instr_in(fetcher_decoder_instr),
+    .instr_addr_in(fetcher_decoder_instr_addr),
+
+    // to fetcher
+    .predict_pc(cdecoder_fetcher_new_pc),
+
+    // to RS and LSB and RoB
+    .instr_issued(cdecoder_fetcher_instr_issued),
+    .updating_instr_issued(cupdating_decoder_fetcher_instr_issued),
+
+    .instr_out(cdecoder_instr),
+    .instr_addr_out(cdecoder_instr_addr),
+    .op_out(cdecoder_op),
+    .instr_type_out(cdecoder_instr_type),
+    .reg_value1_out(cdecoder_reg_value1),
+    .reg_value2_out(cdecoder_reg_value2),
+    .has_dep1_out(cdecoder_has_dep1),
+    .has_dep2_out(cdecoder_has_dep2),
+    .v_rob_id1_out(cdecoder_v_rob_id1),
+    .v_rob_id2_out(cdecoder_v_rob_id2),
+    .rd_rob_id_out(cdecoder_rd_rob_id),
+
+    // to RoB and LSB
+    .imm(cdecoder_imm),
+    // to RoB
+    .rd(cactual_rd),
+
+    // to Reg
+    .reg_id1(cget_reg_value1),
+    .reg_id2(cget_reg_value2),
 
     // from Reg
     .reg_value1_in(reg_decoder_value1),

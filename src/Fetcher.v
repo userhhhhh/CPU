@@ -23,11 +23,15 @@ module Fetcher(
     input wire instr_issued,
     input wire [31 : 0] predictor_pc,
     // to Decoder
+    output wire is_i,
     output reg instr_ready,
     output reg [31 : 0] instr,
     output reg [31 : 0] instr_addr
 
 );
+
+    reg past_is_i;
+    assign is_i = (instr != 0) ? (instr[1:0] == 2'b11) : past_is_i;
 
     // debug
     wire start_fetch_wire = start_fetch;
@@ -58,6 +62,7 @@ module Fetcher(
                 instr <= instr_in;
                 instr_addr <= instr_addr_in;
                 instr_ready <= instr_ready_in;
+                past_is_i <= (instr_in[1:0] == 2'b11);
             end
             else if(updating_instr_issued) begin
                 instr_ready <= 0;

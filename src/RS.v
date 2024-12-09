@@ -88,6 +88,23 @@ module RS (
     wire [`RS_SIZE_WIDTH - 1 : 0] free_rs_line;
     wire [`RS_SIZE_WIDTH - 1 : 0] exe_rs_line;
 
+    function gen_op_other;
+        input [31:0] inst;
+        case (inst[1:0])
+            2'b00,2'b10: gen_op_other = 0;
+            2'b01: begin
+                case (inst[15:13])
+                    3'b100: case (inst[11:10])
+                        2'b01:gen_op_other = 1;
+                        2'b11:gen_op_other = (inst[6:5] == 2'b00) ? 1 : 0;
+                        default:gen_op_other = 0;
+                    endcase
+                    default: gen_op_other = 0;
+                endcase
+            end
+        endcase
+    endfunction
+
     // --------RS_chooser---------
     wire free_tree[0 : (`RS_SIZE<<1)-1];
     wire [`RS_SIZE_WIDTH - 1 : 0] free_tree_id [0 : (`RS_SIZE<<1)-1];
@@ -120,7 +137,9 @@ module RS (
     assign alu_rob_id = rob_id[exe_rs_line];
     // 错误：要判断这条指令有没有op_other
     wire has_op_other = instr_type[exe_rs_line]==`I_TYPE && op[exe_rs_line]==3'b101 || instr_type[exe_rs_line]==`R_TYPE && (op[exe_rs_line]==3'b101 || op[exe_rs_line]==3'b000);
-    assign op_other = has_op_other && instr[exe_rs_line][30];
+    assign is_i = (instr[exe_rs_line][1:0] == 2'b11);
+    wire get_op_other = is_i ? instr[exe_rs_line][30] : gen_op_other(instr[exe_rs_line]);
+    assign op_other = has_op_other && get_op_other;
     assign instr_type_out = instr_type[exe_rs_line];
     assign v1 = reg_value1[exe_rs_line];
     assign v2 = reg_value2[exe_rs_line];

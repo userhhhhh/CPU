@@ -24,7 +24,8 @@ all: testcases build_sim
 endif
 
 testcases:
-	@make -C $(TESTCASE_DIR)
+	cd $(TESTCASE_DIR) && docker run -it --rm -v .:/app -w /app myarch make
+	# @make -C $(TESTCASE_DIR)
 
 _no_testcase_name_check:
 ifndef name
@@ -42,7 +43,6 @@ build_sim_test: testcases _no_testcase_name_check
 	@cp $(SIM_TESTCASE_DIR)/*$(name)*.data $(TESTSPACE_DIR)/test.data
 	@cp $(SIM_TESTCASE_DIR)/*$(name)*.dump $(TESTSPACE_DIR)/test.dump
 	@cp $(SIM_TESTCASE_DIR)/*$(name)*.ans $(TESTSPACE_DIR)/test.ans
-	@find $(SIM_TESTCASE_DIR) -name '*$(name)*.in' -exec cp {} $(TESTSPACE_DIR)/test.in \;
 
 
 build_fpga_test: testcases _no_testcase_name_check $(TESTSPACE_DIR)
