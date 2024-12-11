@@ -73,7 +73,7 @@ module C_Decoder(
 
     assign rd_rob_id_out = rd_rob_id_in;
 
-    wire get_imm = gen_imm(instr_in);
+    wire [31:0] get_imm = gen_imm(instr_in);
     
     // predictor
     function [31:0] gen_c_new_pc;
