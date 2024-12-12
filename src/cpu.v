@@ -538,6 +538,12 @@ module cpu(
     .rs_value(rs_rob_value)
   );
 
+  // always @(posedge clk_in) begin
+  //       if ((mem_wr == 1 && mem_a <= 598) || mem_a > 131072) begin
+  //           $fatal(1,"fuck_you");
+  //       end
+  //   end
+
 always @(posedge clk_in)
   begin
     if (rst_in)

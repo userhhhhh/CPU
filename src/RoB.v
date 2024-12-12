@@ -73,7 +73,9 @@ module RoB (
     
     // predictor
     assign clear = busy[head] && prepared[head] && insts_type[head] == `B_TYPE && values[head][0] != 1;
-    assign back_pc = clear ? insts_addr[head] + 32'h4 : 0;
+    wire head_is_i = (insts[head][1:0]==2'b11);
+    wire [31:0] pc_plus_head = head_is_i ? 32'h4 : 32'h2; 
+    assign back_pc = clear ? insts_addr[head] + pc_plus_head : 0;
     assign head_rob_id = head;
     
     wire init_prepared = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
@@ -109,13 +111,14 @@ module RoB (
                 ops[tail] <= op;
                 insts_type[tail] <= instr_type;
                 insts_addr[tail] <= instr_addr;
+                values[tail] <= gen_decoder_value(instr_type, imm, instr_addr, instr);
 
-                case (instr_type)
-                    `LUI: values[tail] <= imm;
-                    `AUIPC: values[tail] <= instr_addr + imm;
-                    `JAL: values[tail] <= instr_addr + 4;
-                    default: values[tail] <= 0;
-                endcase
+                // case (instr_type)
+                //     `LUI: values[tail] <= imm;
+                //     `AUIPC: values[tail] <= instr_addr + imm;
+                //     `JAL: values[tail] <= instr_addr + pc_plus_tail;
+                //     default: values[tail] <= 0;
+                // endcase
             end
             // receive: 听RS、LSB的广播
             if(rs_ready) begin
@@ -163,7 +166,7 @@ module RoB (
     wire lsb_value_ready2 = lsb_ready && lsb_rob_id == get_rob_id2;
     wire ready_type = (instr_type == `LUI || instr_type == `AUIPC || instr_type == `JAL || instr_type == `JALR);
     wire decoder_value_ready = issue_signal && ready_type;
-    wire [31:0] decoder_value = gen_decoder_value(instr_type, imm, instr_addr);
+    wire [31:0] decoder_value = gen_decoder_value(instr_type, imm, instr_addr, instr);
     assign get_ready1 = prepared[get_rob_id1] || rs_value_ready1 || lsb_value_ready1 || (issue_signal && decoder_value_ready && get_rob_id1 == tail);
     assign get_ready2 = prepared[get_rob_id2] || rs_value_ready2 || lsb_value_ready2 || (issue_signal && decoder_value_ready && get_rob_id2 == tail);
     assign get_value1 = prepared[get_rob_id1] ? values[get_rob_id1] : rs_value_ready1 ? rs_value : lsb_value_ready1 ? lsb_value : decoder_value;
@@ -173,11 +176,12 @@ module RoB (
         input [6:0] _instr_type_in;
         input [31:0] _imm_in;
         input [31:0] _instr_addr_in;
+        input [31:0] _instr;
         begin
             case (_instr_type_in)
                 `LUI: gen_decoder_value = _imm_in;
                 `AUIPC: gen_decoder_value = _imm_in + _instr_addr_in;
-                `JAL, `JALR: gen_decoder_value = _instr_addr_in + 4;
+                `JAL, `JALR: gen_decoder_value = (_instr[1:0]==2'b11) ? _instr_addr_in + 4 : _instr_addr_in + 2;
                 default: gen_decoder_value = 32'h0;
             endcase
         end

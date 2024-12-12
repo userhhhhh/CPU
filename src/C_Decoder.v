@@ -74,6 +74,7 @@ module C_Decoder(
     assign rd_rob_id_out = rd_rob_id_in;
 
     wire [31:0] get_imm = gen_imm(instr_in);
+    wire get_op_other = gen_op_other(instr_in);
     
     // predictor
     function [31:0] gen_c_new_pc;
@@ -249,7 +250,7 @@ module C_Decoder(
             endcase
             predict_pc <= new_pc;
             instr_issued <= need_work;
-            instr_out <= instr_in;
+            instr_out <= {1'b0,get_op_other,14'b0,instr_in[15:0]};
             instr_addr_out <= instr_addr_in;
             reg_value1_out <= reg_value1_in;
             reg_value2_out <= has_rs2 ? reg_value2_in : get_imm;
@@ -355,6 +356,23 @@ module C_Decoder(
                     3'b010: gen_imm = {24'b0,inst[3:2],inst[12],inst[6:4],2'b0};
                     3'b100: gen_imm = 0;
                     3'b110: gen_imm = {24'b0,inst[8:7],inst[12:9],2'b0};
+                endcase
+            end
+        endcase
+    endfunction
+
+    function gen_op_other;
+        input [31:0] inst;
+        case (inst[1:0])
+            2'b00,2'b10: gen_op_other = 0;
+            2'b01: begin
+                case (inst[15:13])
+                    3'b100: case (inst[11:10])
+                        2'b01:gen_op_other = 1;
+                        2'b11:gen_op_other = (inst[6:5] == 2'b00) ? 1 : 0;
+                        default:gen_op_other = 0;
+                    endcase
+                    default: gen_op_other = 0;
                 endcase
             end
         endcase
