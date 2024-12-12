@@ -44,10 +44,10 @@ module Reg (
     assign has_issued_2 = has_dep[get_reg_value2] || ((issue_rd == get_reg_value2) && (issue_rd != 0));//
     assign reg_has_dep1 = has_issued_1 && (!get_ready1);//
     assign reg_has_dep2 = has_issued_2 && (!get_ready2);//
-    assign reg_value1 = reg_has_dep1 ? 0 : (has_issued_1 ? get_value1 : regs[get_reg_value1]);//
-    assign reg_value2 = reg_has_dep2 ? 0 : (has_issued_2 ? get_value2 : regs[get_reg_value2]);//
-    assign reg_dep_rob_id1 = reg_has_dep1 ? (issue_rd == get_reg_value1 ? issue_rob_id : dep_rob_id[get_reg_value1]) : 0;//
-    assign reg_dep_rob_id2 = reg_has_dep2 ? (issue_rd == get_reg_value2 ? issue_rob_id : dep_rob_id[get_reg_value2]) : 0;//
+    assign reg_value1 = (has_issued_1 ? get_value1 : regs[get_reg_value1]);//
+    assign reg_value2 = (has_issued_2 ? get_value2 : regs[get_reg_value2]);//
+    assign reg_dep_rob_id1 = (issue_rd == get_reg_value1 ? issue_rob_id : dep_rob_id[get_reg_value1]);//
+    assign reg_dep_rob_id2 = (issue_rd == get_reg_value2 ? issue_rob_id : dep_rob_id[get_reg_value2]);//
     assign ask_rob_id1 = reg_dep_rob_id1;
     assign ask_rob_id2 = reg_dep_rob_id2;
 

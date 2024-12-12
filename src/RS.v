@@ -137,7 +137,7 @@ module RS (
     assign alu_rob_id = rob_id[exe_rs_line];
     // 错误：要判断这条指令有没有op_other
     wire has_op_other = instr_type[exe_rs_line]==`I_TYPE && op[exe_rs_line]==3'b101 || instr_type[exe_rs_line]==`R_TYPE && (op[exe_rs_line]==3'b101 || op[exe_rs_line]==3'b000);
-    assign is_i = (instr[exe_rs_line][1:0] == 2'b11);
+    wire is_i = (instr[exe_rs_line][1:0] == 2'b11);
     wire get_op_other = is_i ? instr[exe_rs_line][30] : gen_op_other(instr[exe_rs_line]);
     assign op_other = has_op_other && get_op_other;
     assign instr_type_out = instr_type[exe_rs_line];

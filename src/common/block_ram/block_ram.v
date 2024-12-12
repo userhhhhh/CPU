@@ -75,10 +75,10 @@ module single_port_ram_sync
 reg [DATA_WIDTH-1:0] ram [2**ADDR_WIDTH-1:0];
 reg [ADDR_WIDTH-1:0] q_addr_a;
 
-wire [DATA_WIDTH-1:0] debug_ram_1c = ram[28];
-wire [DATA_WIDTH-1:0] debug_ram_1d = ram[29];
-wire [DATA_WIDTH-1:0] debug_ram_1e = ram[30];
-wire [DATA_WIDTH-1:0] debug_ram_1f = ram[31];
+// wire [DATA_WIDTH-1:0] debug_ram_1c = ram[28];
+// wire [DATA_WIDTH-1:0] debug_ram_1d = ram[29];
+// wire [DATA_WIDTH-1:0] debug_ram_1e = ram[30];
+// wire [DATA_WIDTH-1:0] debug_ram_1f = ram[31];
 
 always @(posedge clk)
   begin
