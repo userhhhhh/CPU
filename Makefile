@@ -24,6 +24,7 @@ all: testcases build_sim
 endif
 
 testcases:
+	# cd $(TESTCASE_DIR) && docker run -it --rm -v .:/app -w /app myarch make
 	@make -C $(TESTCASE_DIR)
 
 _no_testcase_name_check:
@@ -66,6 +67,10 @@ fpga_run_mode := -T # or -I
 # Please manually load .bit file to FPGA
 run_fpga: build_fpga_test
 	@cd $(TESTSPACE_DIR) && if [ -f test.in ]; then stdbuf -o0 $(PWD)/fpga/fpga test.elf test.in $(fpga_device) $(fpga_run_mode) | tee test.out; else stdbuf -o0 $(PWD)/fpga/fpga test.elf $(fpga_device) $(fpga_run_mode) | tee test.out; fi && bash ./fpga_judge.sh
+
+run_fpga_me: build_fpga_test
+	cd $(TESTSPACE_DIR) && if [ -f test.in ]; then $(PWD)/fpga/fpga test.elf test.in $(fpga_device) $(fpga_run_mode); else $(PWD)/fpga/fpga test.elf $(fpga_device) $(fpga_run_mode); fi
+
 
 # "heart" runs too slow, so we exclude it 
 # "testsleep" has no answer, you should manually check the output

@@ -56,12 +56,13 @@ module cache(
     assign instr_out = out_fetcher_ready ? {mem_din[7:0], ld_data[23:0]} : 0;
     assign instr_addr_out = out_fetcher_ready ? data_addr : 0;
     
-    assign welcome_lsb = !in_fetcher_ready || out_fetcher_ready;
+    assign welcome_lsb = !io_buffer_full && (!in_fetcher_ready || out_fetcher_ready);
     
     assign out_lsb_ready = (cache_user == 2) && busy && (tobe_read == 0);
     assign instr_type_out = instr_type_in;
 
-    assign mem_wr =  (instr_type == `S_TYPE && busy && tobe_read && cache_user == 2)||(instr_type_in == `S_TYPE && !busy && in_lsb_ready);
+    wire mem_wr_old =  (instr_type == `S_TYPE && busy && tobe_read && cache_user == 2)||(instr_type_in == `S_TYPE && !busy && in_lsb_ready);
+    assign mem_wr = !io_buffer_full && mem_wr_old;
     
     always @(posedge clk) begin
         // $display("time_c_start=%0t", $time);
@@ -105,32 +106,37 @@ module cache(
             end
         end
         else begin
-            case(tobe_read)
-                3'b011: begin
-                    ld_data[7:0] <= mem_din;
-                    already_read <= already_read + 1;
-                    tobe_read <= tobe_read - 1;
-                end
-                3'b010: begin
-                    ld_data[15:8] <= mem_din;
-                    already_read <= already_read + 1;
-                    tobe_read <= tobe_read - 1;
-                end
-                3'b001: begin
-                    ld_data[23:16] <= mem_din;
-                    already_read <= already_read + 1;
-                    tobe_read <= tobe_read - 1;
-                end
-                3'b000: begin
-                    busy <= 0;
-                    cache_user <= 2'b0;
-                    already_read <= 3'b0;
-                    tobe_read <= 3'b0;
-                end
-                default: begin
-                    $display("wrong_cache_tobe_read_time_=%0t", $time);
-                end
-            endcase
+            if(io_buffer_full && mem_wr_old) begin
+                // do nothing
+            end
+            else begin
+                case(tobe_read)
+                    3'b011: begin
+                        ld_data[7:0] <= mem_din;
+                        already_read <= already_read + 1;
+                        tobe_read <= tobe_read - 1;
+                    end
+                    3'b010: begin
+                        ld_data[15:8] <= mem_din;
+                        already_read <= already_read + 1;
+                        tobe_read <= tobe_read - 1;
+                    end
+                    3'b001: begin
+                        ld_data[23:16] <= mem_din;
+                        already_read <= already_read + 1;
+                        tobe_read <= tobe_read - 1;
+                    end
+                    3'b000: begin
+                        busy <= 0;
+                        cache_user <= 2'b0;
+                        already_read <= 3'b0;
+                        tobe_read <= 3'b0;
+                    end
+                    default: begin
+                        $display("wrong_cache_tobe_read_time_=%0t", $time);
+                    end
+                endcase
+            end
         end
         // $display("time_c_end=%0t", $time);
     end
