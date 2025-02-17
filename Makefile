@@ -24,8 +24,8 @@ all: testcases build_sim
 endif
 
 testcases:
-	# cd $(TESTCASE_DIR) && docker run -it --rm -v .:/app -w /app myarch make
-	@make -C $(TESTCASE_DIR)
+	cd $(TESTCASE_DIR) && docker run -it --rm -v .:/app -w /app myarch make
+	# @make -C $(TESTCASE_DIR)
 
 _no_testcase_name_check:
 ifndef name
